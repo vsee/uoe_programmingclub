@@ -1,8 +1,8 @@
 # University of Edinburgh Programming Club
 
-**Time: Thursday's 11am - 1pm**
+**Time: Fridays 11am - 1pm**
 
-**Room: Forrest Hill 1.B32**
+**Room: Forrest Hill 3.D02**
 
 This repository is meant to share files and code related to the University of Edinburgh Programming Club. It will be updated with slides, documents and other resources presented weekly during the club.
 
