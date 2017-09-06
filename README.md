@@ -1,6 +1,6 @@
 # University of Edinburgh Programming Club
 
-**Year: 2017**
+**Year: 2017-18**
 
 **Time: Fridays 11am - 1pm**
 
