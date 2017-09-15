@@ -1,8 +1,10 @@
 # University of Edinburgh Programming Club
 
+**Year: 2017-18**
+
 **Time: Fridays 11am - 1pm**
 
-**Room: Forrest Hill 3.D02**
+**Room: Appleton Tower, Room 6.06**
 
 This repository is meant to share files and code related to the University of Edinburgh Programming Club. It will be updated with slides, documents and other resources presented weekly during the club.
 
