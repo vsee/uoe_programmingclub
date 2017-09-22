@@ -4,6 +4,7 @@
 \usepackage[margin=1cm]{geometry}
 \usepackage{graphicx}
 \usepackage{hyperref}
+\usepackage{listings}
 
 \title{
     \textbf{Programming Club}\\
@@ -25,7 +26,7 @@
         
         The PPM format is:
         \begin{itemize}
-            \item A ``magic number'' for identifying the file type. A ppm image's magic number is the two characters ``P6''.
+            \item A ``magic number'' for identifying the file type. A ppm image's magic number is the two characters ``P3''.
             \item Whitespace (blanks, TABs, CRs, LFs).
             \item A width, formatted as ASCII characters in decimal.
             \item Whitespace.
@@ -36,8 +37,22 @@
             \item A raster of Height rows, in order from top to bottom. Each row consists of Width pixels, in order from left to right.
             Each pixel is a triplet of red, green, and blue samples, in that order. Each sample is represented in pure binary by either 1
             or 2 bytes. If the Maxval is less than 256, it is 1 byte. Otherwise, it is 2 bytes. The most significant byte is first.
+	    \item The pixel values are written in ASCII if the magic number is P3 and in binary if is P6.
             \item A row of an image is horizontal. A column is vertical. The pixels in the image are square and contiguous.
         \end{itemize}
+
+	The following example shows the content of a ppm image with 5x5 white pixels.
+
+	\begin{lstlisting}
+		P3
+		5 5
+		255
+		255 255 255  255 255 255  255 255 255  255 255 255  255 255 255
+		255 255 255  255 255 255  255 255 255  255 255 255  255 255 255
+		255 255 255  255 255 255  255 255 255  255 255 255  255 255 255
+		255 255 255  255 255 255  255 255 255  255 255 255  255 255 255
+		255 255 255  255 255 255  255 255 255  255 255 255  255 255 255      
+	\end{lstlisting}
 
         If you can't see a PPM file on your system, try converting it with Image Magick:
         \begin{centering}
