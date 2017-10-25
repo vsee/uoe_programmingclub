@@ -47,7 +47,7 @@ kit will be checked on return.
       \item some tutorial exercises to become familiar with the robot. 
   \end{enumerate}
 
-  You can find useful details about ev3dev on its project webpage: 
+  You can find useful details about ev3dev on its project webpage:\\
 ­ \url{http://www.ev3dev.org/}
   
   \subsection{Starting Up the robot}
@@ -59,7 +59,7 @@ kit will be checked on return.
           \begin{enumerate}
               \item When the ev3 brick boots, the DICE network manager will create the ev3dev 
   network interface with a static ip address
-              \item Ssh onto the computer: ssh robot@ev3dev. Password: maker 
+              \item ssh onto the computer: ssh robot@ev3dev. Password: maker 
           \end{enumerate}
       \item You are now connected to the robot 
       \item (When you are finished shut down by pressing the upper right button a few times)
@@ -134,7 +134,7 @@ kit will be checked on return.
   \subsection{Driving}
   \begin{enumerate}
     \item build the robot following steps 1 - 40 of the EV3 manual
-    \item write a programm to make it drive through an obstacle course similar 
+    \item write a program to make it drive through an obstacle course similar 
         to the one depicted below
     \item measure the time and try to beat your highscore without bumping 
         into any obstacles
@@ -157,11 +157,28 @@ kit will be checked on return.
   \subsection{Colour Recognition}
   \begin{enumerate}
       \item attach the colour sensor to your robot (Manual 73 - 76) 
-    \item write a program which lets you recognise colours held infront of the sensor (you
+    \item write a program which lets you recognise colours held in front of the sensor (you
         can print a message or make the robot say the colour aloud)
-
-        TODO add a snippet about reading the colour sensor
   \end{enumerate}
+
+  Snippet of code to interpret colour sensor readings. Values are between
+  0 and 7 with the following interpretations:
+  \begin{table}[h]
+      \centering
+      \begin{tabular}{ c | c | c | c | c | c | c | c | c }
+          Colour & none & black & blue & green & yellow & red & white & brown \\
+          \hline
+          Value & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 \\
+      \end{tabular}
+  \end{table}
+
+  \begin{verbatim}
+    cs = ev3.ColorSensor(ev3.INPUT_4)
+    cs.connected
+    cs.mode = 'COL-COLOR'
+    while True:
+        print cs.value()
+  \end{verbatim}
 
   \subsection{Driving between Lines}
   \begin{enumerate}
