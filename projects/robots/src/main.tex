@@ -5,7 +5,7 @@
 \usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage{listings}
-
+\usepackage{minted}
 
 
 \title{
@@ -28,13 +28,13 @@
     exercises and then slowly build up towards using multiple sensors to navigate
     your robot. We will use EV3 Lego Mindstorms robots 
 
-  \subsection{Responsibility for the Equipment}
-When handing out the equipment, students are required to
-sign to show they have received the EV3 kit. A \pounds5 deposit
-will also be taken for a key to one of the lockers. It
-is the responsibility of the students to take care of the
-equipment and to return a complete kit. The contents of the
-kit will be checked on return. 
+    \subsection{Responsibility for the Equipment}
+    When handing out the equipment, students are required to
+    sign to show they have received the EV3 kit. A \pounds5 deposit
+    will also be taken for a key to one of the lockers. It
+    is the responsibility of the students to take care of the
+    equipment and to return a complete kit. The contents of the
+    kit will be checked on return. 
 
     \section{Typical Usage of the EV3 robot}
 
@@ -47,8 +47,11 @@ kit will be checked on return.
       \item some tutorial exercises to become familiar with the robot. 
   \end{enumerate}
 
-  You can find useful details about ev3dev on its project webpage:\\
-­ \url{http://www.ev3dev.org/}
+  You can find useful details about ev3dev on its project webpage: 
+  \url{http://www.ev3dev.org/}
+
+  and the github repository of the python language bindings:
+  \url{https://github.com/ev3dev/ev3dev-lang-python}
   
   \subsection{Starting Up the robot}
   \begin{enumerate}
@@ -92,7 +95,7 @@ kit will be checked on return.
   \section{Tutorial Exercises}
 
   First download the code samples from this location (or use git checkout):\\
-  \url{https://github.com/robotperception/ivr\_robotics}
+  \url{https://github.com/vsee/ivr\_robotics}
 
   This contains the tutorial scripts. Put it somewhere on your local file system
   and uncompress it if you downloaded the archive file. You can keep working within
@@ -146,14 +149,9 @@ kit will be checked on return.
 
     Snippet of code to operate the motor and read its encoder value
     (which is the count of the number of counts it turns): \\
-    \begin{verbatim}
-        m = ev3.LargeMotor('outA')
-        m.connected
-        print m.position
-        m.run_timed(time_sp=3000, duty_cycle_sp=75)
-        print m.position
-    \end{verbatim}
-
+ 
+    \inputminted{python}{../src/python/motor.py}
+  
   \subsection{Colour Recognition}
   \begin{enumerate}
       \item attach the colour sensor to your robot (Manual 73 - 76) 
@@ -172,13 +170,7 @@ kit will be checked on return.
       \end{tabular}
   \end{table}
 
-  \begin{verbatim}
-    cs = ev3.ColorSensor(ev3.INPUT_4)
-    cs.connected
-    cs.mode = 'COL-COLOR'
-    while True:
-        print cs.value()
-  \end{verbatim}
+  \inputminted{python}{../src/python/colour.py}
 
   \subsection{Driving between Lines}
   \begin{enumerate}
@@ -202,14 +194,8 @@ kit will be checked on return.
   
   Snippet of code to print the gyro reading: It returns a number in degrees that
   the sensor has turned: \\
-  \begin{verbatim}
-    g = ev3.GyroSensor()
-    g.connected
-    g.mode = 'GYRO-ANG'
-    while True:
-        print g.value()
-  \end{verbatim}
-  
+  \inputminted{python}{../src/python/gyro.py}
+
   \subsection{Avoiding Obstacles}
   \begin{enumerate}
     \item add the ultrasonic sensor to your robot (Manual 42 - 47)
@@ -222,10 +208,6 @@ kit will be checked on return.
   \end{enumerate}
 
   Snippet of code to print the ultrasonic sensor reading. It returns millimetres:
-  \begin{verbatim}
-    us = ev3.UltrasonicSensor()
-    while True:
-        print us.value()
-  \end{verbatim}
+  \inputminted{python}{../src/python/sonar.py}
 
 \end{document}
