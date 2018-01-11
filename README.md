@@ -1,10 +1,6 @@
 # University of Edinburgh Programming Club
 
-**Year: 2017-18**
-
-**Time: Fridays 11am - 1pm**
-
-**Room: Appleton Tower, Room 6.06**
+The official webpage can be found at [http://progclub.inf.ed.ac.uk/](http://progclub.inf.ed.ac.uk/)
 
 This repository is meant to share files and code related to the University of Edinburgh Programming Club. It will be updated with slides, documents and other resources presented weekly during the club.
 
