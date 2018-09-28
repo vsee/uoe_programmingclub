@@ -2,7 +2,7 @@
 
 The official webpage can be found at [http://progclub.inf.ed.ac.uk/](http://progclub.inf.ed.ac.uk/)
 
-This repository is meant to share files and code related to the University of Edinburgh Programming Club. It will be updated with slides, documents and other resources presented weekly during the club.
+This repository is meant to share files and code related to the University of Edinburgh Programming Club.
 
 ### Join our mailing list for updates on the course and general discussions:
 1. navigate to [https://mlist.is.ed.ac.uk/lists/info/pgclub]
