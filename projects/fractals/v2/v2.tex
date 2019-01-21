@@ -1,0 +1,470 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage[margin=1cm]{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{minted}
+
+\title{
+    \textbf{Programming Club}\\
+    Fractals
+}
+\author{Hugh Leather}
+\date{10$^{th}$ January 2018}
+
+\begin{document}
+    \maketitle
+
+    \section{Output to a file} 
+    
+        We are going to draw our pictures into files. That means that first we need to be able to write into a file. 
+        \paragraph{Task: ``Hello, File!''}
+            Try to write a program to print ``\texttt{Hello, File!}'' to a file called \texttt{hello.txt}.
+
+            Below we'll look at all the bits you will need, step by step. At each step, try to work it out yourself first, making use of
+            the online documentation, using these notes only if you need to.
+        
+        \paragraph{\texttt{PrintStream}}
+            
+            Fortunately, in Java, writing to files is pretty easy. You will probably want to look at the package documentation for the
+            \texttt{java.io} package at some point
+            (\url{https://docs.oracle.com/javase/8/docs/api/index.html?java/io/package-summary.html}).
+     
+            The idea is that we create a \texttt{PrintStream}\footnote{It would probably be a bit more modern to use a
+            \texttt{PrintWriter}.} which has operations like \texttt{println} that print text to a file. You have probably already seen a
+            \texttt{PrintStream} when you use \texttt{System.out.println}. In that code, \texttt{System.out} is a \texttt{PrintStream} that
+            prints to the standard output.
+        
+        \paragraph{A main class.} 
+        
+            You will have to write a Java class. Let's call it \texttt{FileOutputTest}. This is going to be a public class (the public bit
+            just means everyone can see it). In Java, any top level public class needs to go in a file of the same name with a
+            \texttt{.java} extension. So, we'll put the class in file \texttt{FileOutputTest.java}.
+            
+            This file is just going to have a \texttt{main} method which will be called when we run the program. We'll add more to it later.
+            
+            \begin{minted}[autogobble]{Java}
+                public class FileOutputTest {
+                    public static void main(String[] args) {
+                        System.out.println("Hello, World!")
+                    }
+                }
+            \end{minted}
+        
+            For now, you should be able to compile this class with:
+            \begin{minted}[autogobble]{Bash}
+                javac FileOutputTest.java
+            \end{minted}
+            
+            And then run it with:
+            \begin{minted}[autogobble]{Bash}
+                java FileOutputTest
+            \end{minted}
+        
+            If all has gone well, it should print ``\texttt{Hello, World!}''
+            
+        \paragraph{Print to a file instead.}
+            
+            To print to a file, you need to create a new \texttt{PrintStream}. You can do this by adding this to your \texttt{main} method:
+            \begin{minted}[autogobble]{Java}
+                java.io.PrintStream ps = new java.io.PrintStream("hello.txt");
+            \end{minted}
+            Just a quick note: if you are using Java 10, you can just write 
+            \begin{minted}[autogobble]{Java}
+                var ps = new java.io.PrintStream("hello.txt");
+            \end{minted}
+            
+            Now you can print to that stream:
+            \begin{minted}[autogobble]{Java}
+                ps.println("Hello, File!");
+            \end{minted}
+            
+            When you're finished with the file you have to close it, otherwise not all the text may get written:
+            \begin{minted}[autogobble]{Java}
+                ps.close();
+            \end{minted}
+            
+        \paragraph{Exceptions.}
+
+            But, if you try to compile this, it won't work. It will complain that \texttt{FileNotFoundException} has not been handled. Java
+            is quite picky about somethings. In this case it is saying that \texttt{new java.io.PrintStream("hello.txt")} can fail and
+            someone had better agree to do something about it.
+
+            There are several ways we can fix this. The first is to say, hey someone else can deal with it. This means that it will be the
+            problem of whoever calls \texttt{main}. This is okay, the \texttt{java} program will report the exception if it gets it.
+            To do this, we say that \texttt{main} might throw this exception out. Then Java is happy again and we can compile it.
+            \begin{minted}[autogobble]{Java}
+                public static void main(String[] args) throws FileNotFoundException {
+            \end{minted}
+             
+            A better way is to catch the error do something sensible about it using a \texttt{try} and \texttt{catch}.
+             
+            Even better is to use \texttt{try} with resource.
+             
+             We might come back to those another time.
+        
+        \paragraph{Imports} 
+            When you use \texttt{PrintStream}, you have to either use its full name (\texttt{java.io.PrintStream}), or you can import that
+            name so that thereafter you can just use \texttt{PrintStream} by itself. At the top of your Java file, you can write this to
+            import the name.
+        
+            \begin{minted}[autogobble]{Java}
+                import java.io.PrintStream;
+            \end{minted}
+        
+            But, we're probably going to use several names from that package, so we can bring them all in at once by using this import:
+            \begin{minted}[autogobble]{Java}
+                import java.io.*;
+            \end{minted}
+        
+        \paragraph{The final code}
+            This should be what we end up with:
+            
+            \begin{minted}[autogobble]{Java}
+                import java.io.*;
+                public class FileOutputTest {
+                    public static void main(String[] args) throws FileNotFoundException {
+                        PrintStream ps = new PrintStream("hello.txt");
+                        ps.println("Hello, File!");
+                        ps.close();
+                    }
+                }
+            \end{minted}
+        
+            Compile it, run it, and check that it writes to \texttt{hello.txt}.
+
+    \section{A first picture}
+     
+        The simplest picture format you might use is PPM. You can write out the image to a file in this format and then view it on your
+        desktop. There several different PPM types, but the easiest for us is P3, which will allow everything to be written in text, rather
+        than binary. It lets us build up pixels of red, green, and blue components quite simply.
+        
+        \paragraph{P3 format}
+            The basic structure of the file is like this:
+        
+            \begin{minted}[autogobble]{Java}
+                P3
+                <width> <height>
+                <max>
+                <r> <b> <g>   <r> <b> <g>  <r> <b> <g> ...
+                <r> <b> <g>   <r> <b> <g>  <r> <b> <g> ...            
+            \end{minted}
+
+            All of these numbers are given as ordinary decimals. The \texttt{width} and \texttt{height} are the number of pixels wide and
+            high the image is. \texttt{max} is the largest value any of red, green, and blue could take. I.e. fully on. A simple value for
+            this is 255, which will work for bytes and give you $2^24$ different colours. Each of \texttt{r}, \texttt{g}, and \texttt{b}
+            are values between 0 and \texttt{max} inclusive, giving the amount of that colour for the appropriate pixel. The pixels are
+            arranged so that the rows are done first, with the very first pixel being the top left of the image.
+        
+            Between each element of the file, there has to be some whitespace. These can be any number of spaces, tabs, or newlines.
+            \textbf{The last character of the file has to be whitespace!}
+        
+        \paragraph{Task: Make a heart}
+            
+            Since Valentine's day is coming soon, make a very small image, just using your text editor.  It should look like this:
+
+                \includegraphics[width=0.5\textwidth]{code/heart.jpg}
+        
+            I admit, it's not a very good heart.
+            
+        \paragraph{The heart file}
+            Here's what the file should look like.  Remember to have some whitespace at the very end.
+            \begin{minted}[autogobble]{Java}
+                P3
+                5 4
+                255
+                0 0 0       255 0 0     0 0 0       255 0 0     0 0 0 
+                255 0 0     255 0 0     255 0 0     255 0 0     255 0 0
+                0 0 0       255 0 0     255 0 0     255 0 0     0 0 0
+                0 0 0       0 0 0       255 0 0     0 0 0       0 0 0
+            \end{minted}            
+
+        \paragraph{Task: A Java heart}
+            Use Java to write out the heart file instead.  
+            
+            Add two static variables for the height and width of the picture. Add three arrays of \texttt{float}s for the red, green, and
+            blue pixels (we'll use \texttt{0.0} for black and \texttt{1.0} for fully read, green, or blue). Add a function to convert from
+            a \texttt{float} between \texttt{0.0} and \texttt{1.0} into an integer between 0 and 255. Add a function to write the image to
+            a file. Write it.
+        
+        \paragraph{Adding some variables}
+            Let's make a new class and add some variables to it.  Put this code into \texttt{Heart.java}.
+            
+            Note that all the variables are \texttt{static}.  This makes them available from \texttt{static} methods like main.
+            
+            Also, we could have used a multidimensional array for each of the colours, but this works as well. You have to convert though
+            from your \texttt{x} and \texttt{y} coordinates into a single index.
+            
+            \begin{minted}[autogobble]{Java}
+                import java.io.*;
+                
+                public class Heart {
+                    static int width = 5;
+                    static int height = 4;
+                    
+                    static float[] red = new float[width * height];
+                    static float[] green = new float[width * height];
+                    static float[] blue = new float[width * height];
+                    
+                    public static void main(String[] args) {
+                    }
+                }
+            \end{minted}
+        \newpage
+        \paragraph{Setting a pixel}
+            Let's add a function to set the value of a pixel.
+
+            Note that we convert x and y to an index - we should probably do some bounds checking there, eh?
+
+            \begin{minted}[autogobble]{Java}
+                static void set(int x, int y, float r, float g, float b) {
+                    int i = x + y * width;
+                    red[i] = r;
+                    green[i] = g;
+                    blue[i] = b;
+                }
+            \end{minted}
+        
+        \paragraph{Convert a channel value to an \texttt{int}}
+            Converting channels (i.e. values of red, green, or blue pixels) into integers for the file isn't too bad.  
+            
+            We want \texttt{0.0} to map to \texttt{0}.
+            
+            We want \texttt{1.0} to map to \texttt{255}.
+            
+            We want an even spread between.
+            
+            So this equation will do:\footnote{Actually this isn't quite right since really we want the interval $(1-\epsilon,1]$ to map to 255. What would $\epsilon$ be? How would you change the rest?} 
+            $colour \rightarrow colour \times 255$
+            
+            \begin{minted}[autogobble]{Java}
+                static int colourToInt(float c) {
+                    return (int)(c * 255);
+                }
+            \end{minted}
+
+            Now you will notice that there is a bit in there which ``casts to an int''. That is because Java complains if you try to
+            convert from one type to another where you might lose information.  The cast says that this really is what you want.
+            
+        \paragraph{Writing out an image}
+            Let's add a method called \texttt{write} to dump the image to a file.  It should take a file name as a string.
+            
+            Note that this code might throw and exception, so we need to let anyone using it know that.
+            
+            \begin{minted}[autogobble]{Java} 
+                static void write(String fileName) throws FileNotFoundException {
+                    PrintStream ps = new PrintStream(fileName);
+                    ps.println("P3");
+                    ps.println(width + " " + height);
+                    ps.println(255);
+                    
+                    for(int i = 0; i < width * height; ++i) {
+                        ps.print(colourToInt(red[i]) + " ");
+                        ps.print(colourToInt(green[i]) + " ");
+                        ps.print(colourToInt(blue[i]) + " ");
+                    }
+                    
+                    ps.close();
+                }
+            \end{minted}
+        
+        \newpage
+        \paragraph{Making the heart}
+            Let's fill up the pixels in the \texttt{main} method and then write out the file.
+            
+            Note that the array values are filled with zeros to start with, so we only have to set the red pixels.
+            
+            \begin{minted}[autogobble]{Java}
+                public static void main(String[] args) throws FileNotFoundException {
+                    // Set the pixels
+                    set(1,0, 1,0,0);
+                    set(3,0, 1,0,0);
+                    
+                    set(0,1, 1,0,0);
+                    set(1,1, 1,0,0);
+                    set(2,1, 1,0,0);
+                    set(3,1, 1,0,0);
+                    set(4,1, 1,0,0);
+                    
+                    set(1,2, 1,0,0);
+                    set(2,2, 1,0,0);
+                    set(3,2, 1,0,0);
+                    
+                    set(2,3, 1,0,0);
+                    
+                    // Write out the file
+                    write("heart-from-java.ppm");
+                }
+            \end{minted}
+
+    \newpage
+    \section{A smooth image}
+        See if you can make an image, 200 by 100 pixels, that looks like this:
+        
+        \includegraphics{code/smooth.jpg}
+        
+        \paragraph{Looping over the pixels}
+            This might look pretty easy, but there's a little trap waiting for you, which we'll get to in a bit.
+            
+            First of all copy the previous code into a new file and change the class name.  Maybe \texttt{Smooth.java} and \texttt{Smooth}
+            respectively.
+            
+            Then you'll need to change the width and height of the image:
+            \begin{minted}[autogobble]{Java}
+                import java.io.*;
+                
+                public class Smooth {
+                    static int width = 200;
+                    static int height = 100;
+                    //...
+            \end{minted}
+            
+            Now we replace the main method which builds the image (including sending it to a different file). We'll make a couple of
+            \texttt{for} loops. The first will iterate over the \texttt{x} axis, the second will iterate over the \texttt{y} axis.
+
+            \begin{minted}[autogobble]{Java}
+                public static void main(String[] args) throws FileNotFoundException {
+                    for(int x = 0; x < width; ++x) {
+                        for(int y = 0; y < height; ++y) {
+                            // Set the colour for (x, y) here
+                        }
+                    }
+                    // Write out the file
+                    write("smooth.ppm");
+                    
+                }
+            \end{minted}
+        
+            How do you set the colour for \texttt{(x, y)}? Well, you want the \texttt{x} axis to change the red channel from 0 to 1, and
+            the \texttt{y} axis to change the blue channel from 0 to 1. So it should look like this, right?
+            
+            \begin{minted}[autogobble]{Java}
+                set(x,y, x/width,0,y/height);
+            \end{minted}
+            
+            Try it. What happens?
+        
+        \paragraph{Watch out for integer division}
+            Hmm, the last thing made an image of the right size, but all the pixels were black.  What went wrong?
+            
+            Well, if you look at the types of \texttt{x} and \texttt{width}, you will see they are both integers. Integer division rounds
+            down, so instead of a number between \texttt{0.0} and \texttt{1.0}, you get \texttt{0}. Then that is converted from an integer
+            version of zero to floating point version of zero - i.e. \texttt{0.0}.
+            
+            What we need to do is to tell Java that we really want to do this with floating point division, not integer division. 
+            
+            The easy way is to tell it that one of the numbers is a \texttt{float}:
+            \begin{minted}[autogobble]{Java}
+                set(x,y, x/(float)width,0,y/(float)height);
+            \end{minted}
+            
+            Phew, now everything works.
+
+    \newpage
+    \section{An Image Object}
+    
+        So this code that we've written is okay. But it's a bit painful to use. Each time you need a new picture you have to make a new
+        class file for the image. And, you have to manually copy over all the \texttt{width} and \texttt{height} fields, as well as the
+        methods we wanted, like \texttt{set} and \texttt{write}. It is hardly ideal, is it?
+        
+        I guess what we'd like is to be able to have lots of images kicking around all at once, but have them share most of the
+        functionality. Java makes this easy by giving us objects.
+        
+        With the \texttt{static} fields in the classes we've made, there is only one copy per class. With objects, there is a copy per
+        object, and you make as many objects as you like, even inside a loop. In fact, Java expects you to use objects so much that they
+        are the default, you have to mention if something is static specifically.
+        
+        \paragraph{Make an Image class.}
+            Try to work out how to do this yourself!
+            
+        \paragraph{Okay, I'll show you :-)}
+            %
+            First, let's make a new Java file for our class. We'll call it \texttt{Image.java}. 
+            
+            Copy in everything from the other files except the \texttt{main} method and don't use the word \texttt{static}. Non static
+            things belong to a particular object.
+            
+            In fact, wherever you had \texttt{static}, use the word \texttt{public}. This means that Java will let you use that name from
+            outside the object. I think Volker is going to discuss both \texttt{static} and \texttt{public} in Inf1OP at some point, so I
+            won't go into them in much detail.
+
+            \begin{minted}[autogobble]{Java}
+                import java.io.*;
+
+                public class Image {
+                    public int width;
+                    public int height;
+    
+                    public float[] red = new float[width * height];
+                    public float[] green = new float[width * height];
+                    public float[] blue = new float[width * height];    
+
+                    public void set(int x, int y, float r, float g, float b) {
+                        int i = x + y * width;
+                        red[i] = r;
+                        green[i] = g;
+                        blue[i] = b;
+                    }
+
+                    public int colourToInt(float c) {
+                        return (int)(c * 255);
+                    }
+                    public void write(String fileName) throws FileNotFoundException {
+                        PrintStream ps = new PrintStream(fileName);
+                        ps.println("P3");
+                        ps.println(width + " " + height);
+                        ps.println(255);
+        
+                        for(int i = 0; i < width * height; ++i) {
+                            ps.print(colourToInt(red[i]) + " ");
+                            ps.print(colourToInt(green[i]) + " ");
+                            ps.print(colourToInt(blue[i]) + " ");
+                        }
+        
+                        ps.close();
+                    }
+                    
+                }
+            \end{minted}
+        
+        \newpage
+        \paragraph{Make a new image}
+            %
+            So now we we can make as many images as we want. But how do we use them?
+            
+            Let's make the \emph{smooth} image using our object class.  We'll put it in class \texttt{SmoothObj}
+            
+            To make a new object, use \texttt{new}.  For the image, we would use:
+
+            \begin{minted}[autogobble]{Java}
+                Image img = new Image();
+            \end{minted}
+            
+            Now wherever previously you used a static variable or method, call \texttt{img}'s version instead.     
+            
+            \begin{minted}[autogobble]{Java}
+                import java.io.*;
+
+                public class SmoothObj {
+
+                    public static void main(String[] args) throws FileNotFoundException {
+                        Image img = new Image();
+                        img.width = 200;
+                        img.height = 100;
+                        
+                        // Set the pixels
+                        for(int x = 0; x < img.width; ++x) {
+                            for(int y = 0; y < img.height; ++y) {
+                                img.set(x,y, x/(float)img.width,0,y/(float)img.height);
+                            }
+                        }
+                        // Write out the file
+                        img.write("smooth.ppm");
+                    }
+                }
+            \end{minted}
+                    
+            You could now have as many images as you'd like.
+            
+\end{document}
