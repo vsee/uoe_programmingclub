@@ -467,4 +467,395 @@
                     
             You could now have as many images as you'd like.
             
+            Eeek, this didn't work!  Why not?
+
+        \paragraph{An image constructor}
+            %
+            When you made a new new \texttt{Image}, did you notice that there were parentheses after \texttt{Image}? This might be a bit
+            suggestive to you that maybe you could put function parameters there.  Well, yes, you can.
+            
+            We currently have to tell Java after we constructed the \texttt{Image} what it's width and height are.  That could be dangerous.
+            
+            In fact, it was dangerous for us! You may have noticed that you got an \texttt{java.lang.ArrayIndexOutOfBoundsException} when
+            running the previous code. The reason for this is that we didn't set the \texttt{Image}'s \texttt{width} or \texttt{height}
+            before making the arrays for \texttt{red}, \texttt{green}, and \texttt{blue}. In java, when you don't initialise a field, it is
+            set to \texttt{0}, if it's a number, or \texttt{null} if it's an object. So, \texttt{width} and \texttt{height} were both zero
+            when the arrays were created. Then, when we tried to set a pixel, the index we chose `fell off' the end of the array.
+            
+            By using constructors and then not letting other people access critical bits of a class, we can make sure that things are
+            always in a good state. A constructor is an object method with special name, the same name as the class. Also, it doesn't
+            return anything, you can only call it during \texttt{new}, and there are some other rules about what they have to do which we
+            won't worry about just now.
+            
+            Let's make a constructor for our \texttt{Image} class that takes the \texttt{width} and \texttt{height}, and then creates the
+            arrays for the colours.
+            
+            \begin{minted}[autogobble]{Java}
+                public class Image {
+                    public int width;
+                    public int height;
+    
+                    public float[] red;
+                    public float[] green;
+                    public float[] blue;    
+            
+                    public Image(int w, int h) {
+                        width = w;
+                        height = h;
+                        red = new float[width * height];
+                        green = new float[width * height];
+                        blue = new float[width * height];
+                    }
+                    // ...
+            \end{minted}
+            
+            Great! But now the \texttt{new} call in \texttt{SmoothObj} doesn't work because we don't have a constructor which takes no
+            arguments.  Let's change that.
+            
+            \begin{minted}[autogobble]{Java}
+                import java.io.*;
+
+                public class SmoothObj {
+
+                    public static void main(String[] args) throws FileNotFoundException {
+                        Image img = new Image(200, 100);
+                        
+                        // Set the pixels
+                        for(int x = 0; x < img.width; ++x) {
+                            for(int y = 0; y < img.height; ++y) {
+                                img.set(x,y, x/(float)img.width,0,y/(float)img.height);
+                            }
+                        }
+                        // Write out the file
+                        img.write("smooth.ppm");
+                    }
+                }
+            \end{minted}
+        
+        \paragraph{Finally secure}
+            %
+            BTW, the things we're doing here, up until we talk about Mandelbrots, are just to make things better and to show you more Java.
+            If you want to just get on with the pretty pictures, you could skip ahead to Mandelbrots and try to make things work like that.
+            
+            So, we have a constructor, but we still aren't entirely safe. What if someone changes the \texttt{width} after they've made the
+            image? Well, then all hell could break loose. Maybe we should stop them doing that.
+            
+            In Java, there is a simple way to stop that. We can tell Java that once a field is initialised then it can't ever be changed
+            again. We do that with the \texttt{final} keyword.
+
+            \begin{minted}[autogobble]{Java}
+                public class Image {
+                    public final int width;
+                    public final int height;
+    
+                    public final float[] red;
+                    public final float[] green;
+                    public final float[] blue;    
+            \end{minted}
+            
+            Do that and see what happens if you try to change \texttt{width}, say by adding one to it.
+            
+        \paragraph{Complaining about crazy people}
+            %
+            Okay, so we've protected against crazy people trying to mess with things in the wrong order, but we still aren't safe. What
+            would happen if someone used a negative \texttt{width} for the \texttt{Image}? Or what if someone tries to set the pixel at
+            \texttt{(-100,5000)}? What if they use colour values outside of the range \texttt{0.0} to \texttt{1.0}? They would probably
+            make the universe explode (try it?).
+            
+            Maybe we should check for this bad things and report something sensible to the user. What we will do is throw an exception.
+            That means we tell Java to stop what it's doing and report a problem that someone has to fix or the stop the program if no one
+            does. We've already seen that making a \texttt{PrintStream} can throw a \texttt{FileNotFoundException}. It is just like that,
+            except for two things. 1) we will throw an \texttt{IllegalArgumentException} instead. 2) Java isn't as persnickety about that
+            exception, so we don't need to add it to the list in \texttt{main}, or anywhere else. \footnote{Java has two types of exception. One has
+            to be handled or the compiler won't compile your program. They other type (called a \texttt{RuntimeException}) doesn't. It's an
+            historical thing, mostly, and not a little bit annoying.}
+            
+            \begin{minted}[autogobble]{Java}
+                public Image(int w, int h) {
+                    if(w <= 0) throw new IllegalArgumentException("width must be > 0");
+                    if(h <= 0) throw new IllegalArgumentException("width must be > 0");
+                    //...
+            \end{minted}
+            
+            Now, if someone tries to make a badly sized image, they will get a nice error about it.  Try it.
+            
+            Can you make anything else in the \texttt{Image} class safe this way?
+            
+    \newpage
+    \section{Objects, Objects, Everywhere!}
+        
+        Objects are kind of useful in Java.  They let us make lots of things easier and more natural. Let's turn our attention to colours.
+        
+        \paragraph{Colour}
+            %
+            So far, we've been using three separate colour channels to represent our three colours. This means you can't define a constant
+            for mauve, say, and then pass it into the \texttt{set} method on the image. You still have to put in the three colours
+            individually. It would be much better if we had an idea of a colour object instead that encapsulated the three colour channels
+            for us.
+        
+            So, let's create a \texttt{Colour} class.  What do you think it should look like?
+        
+            Let's put it in \texttt{Colour.java}.  
+
+            \begin{minted}[autogobble]{Java}
+                public class Colour {
+                    public final float r, g, b;
+                
+                    public Colour(float r, float g, float b) {
+                        this.r = r;
+                        this.g = g;
+                        this.b = b;
+                    }
+                }
+            \end{minted}
+        
+            Now, you might notice that there's a special name used here, \texttt{this}. It refers to the current object. You can imagine
+            that there is an extra parameter to a non \texttt{static} method, called \texttt{this} that points to the current object. In
+            fact, under the covers, this is exactly what Java does.
+
+            \begin{minted}[autogobble]{Java}                
+                public Colour(Colour this, float r, float g, float b)
+            \end{minted}
+        
+            So, now, when we refer to \texttt{this.r}, it means the \texttt{r} belonging to the object itself, not the \texttt{r} passed in.
+            This is great because it means we can have the same name appear twice without getting confused.
+        
+            Oh, notice that we made the \texttt{r}, \texttt{b}, \texttt{g} fields of the \texttt{Colour} object all \texttt{final}. This
+            means that \texttt{Colour}s are \emph{immutable}. Immutable objects are a bit safer since they are harder to mess up. Consider
+            if we added some \texttt{static} fields into the \texttt{Colour} class for common colours.
+        
+            \begin{minted}[autogobble]{Java}
+                public class Colour {
+                    // ...
+                    public static final Colour BLACK = new Colour(0,0,0);
+                    public static final Colour WHITE = new Colour(1,1,1);
+                    public static final Colour RED = new Colour(1,0,0);
+                    // ...
+                }
+            \end{minted}
+        
+            Notice we made those fields \texttt{final} so no one can swap out \texttt{BLACK} for a different colour which would certainly
+            confuse people trying to use \texttt{BLACK} afterwards.
+        
+            Oh, also notice that this \emph{constant} is spelled with all capital letters. This is standard Java naming practice. You
+            should use the standard coding conventions of whatever language you are using - it tends to annoy other developers if you don't.
+        
+            But, now imagine that the \texttt{r}, \texttt{b}, \texttt{g} fields of the \texttt{Colour} object weren't \texttt{final}. Now
+            you could change \texttt{BLACK} into red, which probably wouldn't be the best idea:
+        
+            \begin{minted}[autogobble]{Java}
+                Colour.BLACK.r = 1;
+            \end{minted}
+        
+            Can you finish off the \texttt{Colour} class? Add more standard colours. Add some error checking so people don't give crazy
+            numbers to the constructor.
+        
+        \newpage
+        \paragraph{An \texttt{Image} is made of \texttt{Colour}s}
+            %
+            Let's go ahead and make the \texttt{Image} class have a single array of \texttt{Colour}s rather than individual channels.
+            Actually, why don't you try that before we show you? (Don't look below til you've tried it.)
+            
+            Now, we'll see that, but I'm going to make a few other changes as well which I'll explain afterwards.
+            
+            \begin{minted}[autogobble]{Java}
+                public class Image {
+                    public final int w;
+                    public final int h;
+
+                    private final Colour[] pix;
+
+                    public Image(int w, int h) {
+                        if(w <= 0) throw new IllegalArgumentException("width must be > 0");
+                        if(h <= 0) throw new IllegalArgumentException("width must be > 0");
+                        this.w = w;
+                        this.h = h;
+                        pix = new Colour[w * h];
+                        for(int i = 0; i < w * h; ++i) pix[i] = Colour.BLACK;
+                    }
+
+                    public void set(int x, int y, Colour c) {
+                        if(x < 0 || x >= w || y < 0 || y > h) throw new IllegalArgumentException("Cannot access pixel,"+x+","+y);
+                        if(c == null) throw new IllegalArgumentException("Cannot set pixel to null");
+                        pix[x + y * w] = c;
+                    }
+                    public Colour get(int x, int y) {
+                        if(x < 0 || x >= w || y < 0 || y > h) throw new IllegalArgumentException("Cannot access pixel,"+x+","+y);
+                        return pix[x + y * w];
+                    }
+
+                    private int colourToInt(float c) {
+                        return (int)(c * 255);
+                    }
+
+                    public void write(PrintStream ps) {
+                        ps.println("P3");
+                        ps.println(w + " " + h);
+                        ps.println(255);
+        
+                        for(Colour p : pix) {
+                            ps.print(colourToInt(p.r) + " ");
+                            ps.print(colourToInt(p.b) + " ");
+                            ps.print(colourToInt(p.g) + " ");
+                        }
+                    }
+    
+                    public void write(String fileName) throws FileNotFoundException {
+                        PrintStream ps = new PrintStream(fileName);
+                        write(ps);
+                        ps.close();
+                    }
+                }
+            \end{minted}
+        
+            What's different here? 
+            
+            First, I changed the names of \texttt{width} and \texttt{height} to \texttt{w} and \texttt{h}, since we now know we can reuse
+            names. This is a pretty pointless change really, but it's good to see where you need to use \texttt{this.w} and \texttt{this.h}.
+            
+            Then you'll see that the arrays, \texttt{r}, \texttt{b}, and \texttt{g} have been replaced by a single array of
+            \texttt{Colour}s, called \texttt{pix}. In the constructor you'll see that gets initialised with \texttt{new}.
+
+            The constructor then fills in each element of \texttt{pix} with \texttt{Colour.BLACK}. That is because a newly created array of
+            objects will have each element set to \texttt{null}. We'd much rather the elements had sensible colours to start with.
+            
+            Now you might also see that the \texttt{pix} array is declared \texttt{private}, not \texttt{public}. This prevents any code
+            except that written in the \texttt{Colour} class from messing with the array. If we don't let anyone else change the array,
+            then no one can put \texttt{null}s in it which might break our code.
+            
+            The \texttt{set} method now takes a \texttt{Colour}, rather than individual channels.
+            
+            Since we have made the \texttt{pix} field private, no one else can access it to write it. But they also can't read it. The
+            \texttt{get} method lets people see what's in an image's pixels safely. 
+            
+            I also changed \texttt{colourToInt} to be \texttt{private} because it's only really for the \texttt{Image} class's internal use.
+            
+            Finally, I made two versions of \texttt{write}. One works on \texttt{PrintStream}s, the other does the sensible thing with a
+            file name. In Java, you can have two methods with the same name if they have different parameter types. Notice that the file
+            name version calls the \texttt{PrintStream} version. You can now easily print an image to standard output as well as to files.
+            
+        \paragraph{Filling an image}
+            %
+            I had another motivation for wanting use \texttt{Colour} objects rather than three channels. It means that we can return
+            colours from a method. This lets us do something cool.
+            
+            At the moment, you have to set pixels individually or write a couple of nested for loops, iterating over \texttt{x} and
+            \texttt{y}.  That latter form is likely to be a common thing to do but it's a bit of pain.  
+            
+            Suppose we had a type of object with a function that takes an \texttt{Image}, \texttt{x} and \texttt{y} and gives a
+            \texttt{Colour}. Maybe it looks like this (put this in a file called \texttt{PixelFn.java}):
+        
+            \begin{minted}[autogobble]{Java}
+                public interface PixelFn {
+                    Colour apply(Image img, int x, int y);
+                }
+            \end{minted}
+            
+            We could then have a method in our \texttt{Image} class which takes one of these functions and fills in the pixels:
+
+            \begin{minted}[autogobble]{Java}
+                public void fill(PixelFn f) {
+                    for( int x = 0; x < w; ++x) {
+                        for( int y = 0; y < h; ++y) {
+                            set(x, y, f.apply(this, x, y));
+                        }
+                    }
+                }
+            \end{minted}
+            
+            That would mean that we could fill an entire image with just one line of code if we had a suitable \texttt{PixelFn}.
+            
+            But, wait a second! What is all that going on with \texttt{PixelFn}? I said it was a \emph{class}, but it says
+            \texttt{interface}. And, the method doesn't have an implementation, and the method isn't \texttt{public}.
+            
+            An interface is a very special type of type which gets added to other classes to let you share types. We might use it like this:
+
+            \begin{minted}[autogobble]{Java}
+                pubic class Reddish implements PixelFn {
+                    public Colour apply(Image img, int x, int y) {
+                        return Colour(x/(float)img.r);
+                    }
+                }
+            \end{minted}
+            
+            This says \texttt{Reddish} is also an PixelFn, so you can use it wherever you would use an \texttt{PixelFn}.
+
+            \begin{minted}[autogobble]{Java}
+                public static void main(String[] args) {
+                    Image img = new Image(200, 100);
+                    img.fill(new Reddish());
+                    img.write(System.out);
+                }
+            \end{minted}
+            
+            That looks a bit better, but Java has something really cool to make this even better.
+
+        \paragraph{Lambda functions!}
+            %
+            Java has a pretty cool way of making these little classes which are only used to pass forward a method. They are called
+            \emph{lambda}s. They are definitely worth you while Googling about. Here, I'm just going to show you how we can use them, but I
+            won't go into too much explanation (you can always ask a helper).
+            
+            We do two things. The first is to declare that \texttt{PixelFn} is one of these special little classes. Java uses something
+            called an \emph{annotation} for this. An annotation just tags a class with some extra information. To do it for
+            \texttt{PixelFn}, we add this:
+            
+            \begin{minted}[autogobble]{Java}
+                @FunctionalInterface
+                public interface PixelFn {
+                    Colour apply(Image img, int x, int y);
+                }
+            \end{minted}
+            
+            Now, when we use it in the \texttt{fill} method, we can create an \texttt{PixelFn} with some pretty cool syntax:
+            
+            \begin{minted}[autogobble]{Java}
+                public static void main(String[] args) {
+                    Image img = new Image(200, 100);
+                    img.fill(
+                        (im, x, y) -> new Colour(x/(float)im.w, y/(float)im.h, 0)
+                    );
+                    img.write(System.out);
+                }
+            \end{minted}
+            
+            That bit inside of \texttt{fill} implicitly makes an \texttt{PixelFn} whose \texttt{apply} method makes that \texttt{Colour}.
+            It's really quite neat.
+            
+            Now that we've got this, we can also add another constructor to \texttt{Image}, since often we'd want to fill the image as soon
+            as we make it.
+            
+            \begin{minted}[autogobble]{Java}
+                public class Image {
+                    // ...
+                    public Image(int w, int h, PixelFn f) {
+                        if(w <= 0) throw new IllegalArgumentException("width must be > 0");
+                        if(h <= 0) throw new IllegalArgumentException("width must be > 0");
+                        this.w = w;
+                        this.h = h;
+                        pix = new Colour[w * h];
+                        fill(f);
+                    }
+                    // ...
+                }
+            \end{minted}
+            
+            Now, that whole thing to make our smooth image becomes:
+            
+            \begin{minted}[autogobble]{Java}
+                import java.io.*;
+
+                public class SmoothLambda {
+                    public static void main(String[] args) throws FileNotFoundException {
+                        new Image(200, 100, (im, x, y) -> new Colour(x/(float)im.w, y/(float)im.h, 0)).write("smooth.ppm");
+                    }
+                }
+            \end{minted}
+        
+            BTW, the \texttt{apply} method's name isn't important. The name comes from functional programming terminology.
+        
+        \paragraph{Windowed fill}
+            %
+            Coming soon...
+        
 \end{document}
