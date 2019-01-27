@@ -647,6 +647,21 @@
                 Colour.BLACK.r = 1;
             \end{minted}
         
+            While we're here, let's make another constructor, this time for gray scale colours. It will only take one value, the amount of
+            gray, and will call the other constructor to do it's work.
+
+            \begin{minted}[autogobble]{Java}
+                public class Colour {
+                    // ...
+                    public Colour(float c) {
+                        this(c, c, c);
+                    }
+                    // ...
+                }
+            \end{minted}
+            
+            Did you notice the odd little notation to call another constructor from the same class?
+        
             Can you finish off the \texttt{Colour} class? Add more standard colours. Add some error checking so people don't give crazy
             numbers to the constructor.
         
@@ -855,8 +870,118 @@
         
             BTW, the \texttt{apply} method's name isn't important. The name comes from functional programming terminology.
         
+        \newpage
         \paragraph{Windowed fill}
             %
-            Coming soon...
+            The images we have drawn are 2d arrays of pixels. But what they represent isn't necessarily pixelated. You may have heard about
+            Mandelbrots, for example. They define a 2 dimensional real valued space\footnote{Actually the coordinate system is given by
+            complex numbers.}. At each point in the space we can ask what colour that point is. It isn't a discreet space, like the bitmap
+            type images we have drawn so far, made up of little squares. Instead you can look as closely or as far away as you like.
+            
+            So, suppose we have an image function which takes in an \texttt{x} and \texttt{y} both of type \texttt{float} and returns a
+            \texttt{Colour}. We want to make the \texttt{Image} bitmap be a little window onto this real valued image function. This isn't
+            too different from the \texttt{PixelFn} we had before, except it uses floats and doesn't take the \texttt{Image} as a
+            parameter. It shouldn't need the \texttt{Image} since it should never change itself because of the window.
+            
+            We then like to fill an \texttt{Image} by giving it one of these functions and telling it the rectangle of the window we want
+            to look at.  Have a look at the picture below to get the idea.
+            
+            \includegraphics[width=\textwidth]{code/mandel-window}
+            
+            The \texttt{Image} we fill will be the little rectangle in the middle. The number of pixels in each dimension are given by the
+            \texttt{Image}'s width and height. We can move the rectangle around and `see' different bits of the underlying function.
+            Do you think you could add these capabilities to the \texttt{Image} class?  Try it.
+            
+            
+            Let's start by making the \texttt{ImageFn}.  Remember to put this in a file called \texttt{ImageFn.java}.
+            
+            \begin{minted}[autogobble]{Java}
+                @FunctionalInterface
+                public interface ImageFn {
+                    Colour apply(float x, float y);
+                }
+            \end{minted}
+            
+            Now for the \texttt{fill} method, we need to take the \texttt{ImageFn} and the coordinates of the window on the
+            \texttt{ImageFn}. We could (and probably should) do that by making a \texttt{Rectangle} class, but for the moment I'll just
+            take the values for the \emph{top}, \emph{left}, \emph{bottom}, and \emph{right} of the window individually.
+            
+            \begin{minted}[autogobble]{Java}
+                public class Image {
+                    \\ ...
+                    public void fill(ImageFn f, float lft, float top, float rgt, float bot ) {
+                        for( int x = 0; x < w; ++x) {
+                            float fw = rgt - lft;
+                            float fx = lft + x * fw / w;
+                            for( int y = 0; y < h; ++y) {
+                                float fh = bot - top;
+                                float fy = top + y * fh / h;
+                                set(x, y, f.apply(fx, fy));
+                            }
+                        }
+                    }                    
+                    \\ ...
+                }
+            \end{minted}
+            
+            The important bit is that we've mapped from the bitmap coordinates, \texttt{x} and \texttt{y}, into the \texttt{ImageFn}
+            coordinates, \texttt{fx} and \texttt{fy}\footnote{I'm beginning to think \texttt{BitMap} or something might have been a better
+            name than \texttt{Image}. You could always change the names, of course.} Then we called the \texttt{ImageFn}, \texttt{f}, to
+            get the colour and set the appropriate pixel in the \texttt{Image}.
+            
+            We should probably make a constructor like this as well.
+
+            \begin{minted}[autogobble]{Java}
+                public class Image {
+                    \\ ...
+                    public Image(int w, int h, ImageFn f, float lft, float top, float rgt, float bot ) {
+                        if(w <= 0) throw new IllegalArgumentException("width must be > 0");
+                        if(h <= 0) throw new IllegalArgumentException("width must be > 0");
+                        this.w = w;
+                        this.h = h;
+                        pix = new Colour[w * h];
+                        fill(f, lft, top, rgt, bot);
+                    }
+                    \\ ...
+                }
+            \end{minted}
+            
+            Shall we use it? Can you make an ImageFn that represents a filled in red circle of radius one at the origin with black
+            elsewhere? Can you then make an \texttt{Image} of that with a suitable window?
+            
+            Here we go:
+            
+            \begin{minted}[autogobble]{Java}
+                public class CircleTest {
+                    public static void main(String[] args) {
+                        new Image(
+                            200, 200,
+                            (x,y) -> x*x + y*y > 1 ? Colour.BLACK : Colour.RED,
+                            -1, 1, 1, -1 
+                        ).write("circle.ppm");
+                    }
+                }
+            \end{minted}
+            
+            It should look like this:
+            
+            \includegraphics[width=0.4\textwidth]{code/circle}
+            
+
+            I bet you can come up with a whole bunch of cool things to add to these classes.  You should, give it a go!
+            
+            Here are a couple of ideas:
+            \begin{itemize}
+                \item Anti-aliasing - allow supersampling of the \texttt{ImageFn} so that the circle doesn't get so jaggy.
+                \item Can you make transforms from one image to another.  E.g. grayscale, colour shift, scale, rotate, etc?
+                \item Can you make methods to compose images?
+            \end{itemize}
+            
+            But, for the moment, we will stop playing with this and move on to drawing some pretty pictures 
+
+    \newpage
+    \section{Mandelbrots}
+
+        Coming soon.
         
 \end{document}
