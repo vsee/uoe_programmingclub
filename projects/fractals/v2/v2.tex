@@ -506,7 +506,7 @@
                         green = new float[width * height];
                         blue = new float[width * height];
                     }
-                    // ...
+                    ...
             \end{minted}
             
             Great! But now the \texttt{new} call in \texttt{SmoothObj} doesn't work because we don't have a constructor which takes no
@@ -626,11 +626,11 @@
         
             \begin{minted}[autogobble]{Java}
                 public class Colour {
-                    // ...
+                    ...
                     public static final Colour BLACK = new Colour(0,0,0);
                     public static final Colour WHITE = new Colour(1,1,1);
                     public static final Colour RED = new Colour(1,0,0);
-                    // ...
+                    ...
                 }
             \end{minted}
         
@@ -652,11 +652,11 @@
 
             \begin{minted}[autogobble]{Java}
                 public class Colour {
-                    // ...
+                    ...
                     public Colour(float c) {
                         this(c, c, c);
                     }
-                    // ...
+                    ...
                 }
             \end{minted}
             
@@ -710,8 +710,8 @@
         
                         for(Colour p : pix) {
                             ps.print(colourToInt(p.r) + " ");
-                            ps.print(colourToInt(p.b) + " ");
                             ps.print(colourToInt(p.g) + " ");
+                            ps.print(colourToInt(p.b) + " ");
                         }
                     }
     
@@ -786,7 +786,7 @@
             An interface is a very special type of type which gets added to other classes to let you share types. We might use it like this:
 
             \begin{minted}[autogobble]{Java}
-                pubic class Reddish implements PixelFn {
+                public class Reddish implements PixelFn {
                     public Colour apply(Image img, int x, int y) {
                         return Colour(x/(float)img.w);
                     }
@@ -843,7 +843,7 @@
             
             \begin{minted}[autogobble]{Java}
                 public class Image {
-                    // ...
+                    ...
                     public Image(int w, int h, PixelFn f) {
                         if(w <= 0) throw new IllegalArgumentException("width must be > 0");
                         if(h <= 0) throw new IllegalArgumentException("width must be > 0");
@@ -852,7 +852,7 @@
                         pix = new Colour[w * h];
                         fill(f);
                     }
-                    // ...
+                    ...
                 }
             \end{minted}
             
@@ -908,7 +908,7 @@
             
             \begin{minted}[autogobble]{Java}
                 public class Image {
-                    \\ ...
+                    ...
                     public void fill(ImageFn f, float lft, float top, float rgt, float bot ) {
                         for( int x = 0; x < w; ++x) {
                             float fw = rgt - lft;
@@ -920,7 +920,7 @@
                             }
                         }
                     }                    
-                    \\ ...
+                    ...
                 }
             \end{minted}
             
@@ -933,7 +933,7 @@
 
             \begin{minted}[autogobble]{Java}
                 public class Image {
-                    \\ ...
+                    ...
                     public Image(int w, int h, ImageFn f, float lft, float top, float rgt, float bot ) {
                         if(w <= 0) throw new IllegalArgumentException("width must be > 0");
                         if(h <= 0) throw new IllegalArgumentException("width must be > 0");
@@ -942,7 +942,7 @@
                         pix = new Colour[w * h];
                         fill(f, lft, top, rgt, bot);
                     }
-                    \\ ...
+                    ...
                 }
             \end{minted}
             
@@ -970,18 +970,288 @@
 
             I bet you can come up with a whole bunch of cool things to add to these classes.  You should, give it a go!
             
-            Here are a couple of ideas:
+            But, for the moment, we will stop playing with this and move on to drawing some pretty pictures 
+
+        \newpage
+        \paragraph{Other things}
+            Here some ideas of things you might try.
             \begin{itemize}
                 \item Anti-aliasing - allow supersampling of the \texttt{ImageFn} so that the circle doesn't get so jaggy.
+                \item What about having an alpha channel (transparency).
                 \item Can you make transforms from one image to another.  E.g. grayscale, colour shift, scale, rotate, etc?
                 \item Can you make methods to compose images?
+                \item There is also a P6 version of PPM which is more compact, it uses binary.  Can you use that instead?
+                \item Can you write directly to a different file format?
+                \item Skip this lot and look at how Java supports images.
+                \item Can you make a GUI to show moving images?
+                \item Can you do the same thing in HTML, using JavaScript and an HTML Canvas object?
             \end{itemize}
-            
-            But, for the moment, we will stop playing with this and move on to drawing some pretty pictures 
 
     \newpage
     \section{Mandelbrots}
 
-        Coming soon.
+        We're going to make a very famous type of fractal called a Mandelbrot. The Mandelbrot set is those complex points, $c$, for which
+        $f_c(z)=z^2+c$ does not diverge when iterated. What that means is that if you view a complex number as a point on a 2 dimensional
+        plane -- the real component is the \texttt{x} axis, and the imaginary component is the \texttt{y} axis -- then we can tell whether
+        that point is in the set by repeatedly applying that equation forever and seeing if it grows without bound or not.
         
+        Well, obviously doing things for ever is a tiny bit tedious. So instead what we'll do is repeat the equation a maximum number of
+        times and see if the complex number gets bigger than some threshold in that time.  This is called the escape time algorithm.
+        
+        In fact, some numbers `escape' more quickly than others, so we can use that `speed of escape' to assign a colour to the points
+        which aren't in the set.
+        
+        That is, for a given point, $c$, start with 
+        
+        $$z_0 = 0$$
+        $$z_n = z_{n-1}^2 + c$$
+        
+        Now iterate and find out the first $n$ for which $|z_n| > 2$ or $n > 32$ (the latter bit stops you going on forever). You can
+        change the 2 and the 32 if you like.
+        
+        This gives you number, $n$, in the interval, $[0,32]$. You can convert this number into a colour, making 0 black, 32 white, and
+        interpolating in between.
+        
+        Now imagine your image ranges over the complex space, with the x axis ranging from -2 to 1, and the y axis ranging from
+        -1.5\emph{i} to 1.5\emph{i}. You can now plot the Mandelbrot set for this part of the space. It should look like this:
+        
+        \begin{center}
+            \includegraphics[width=0.4\textwidth]{../latex-src/mandelbrot}
+        \end{center}
+        
+        Have a go at doing this yourself, then I'll walk you through my solution.
+        
+        \paragraph{Complex numbers, a reminder}
+            %
+            It's pretty clear we're going to need complex numbers here. Unfortunately, Java doesn't provide them out of the box. There are
+            a bunch of online implementations - maybe you could search for some. But we also should have learned enough to be able to make
+            our own. Let's do that.
+            
+            A quick reminder about what complex numbers are.
+            
+            A complex number has a real and imaginary component: 
+            $$z = a + bi$$
+            Where $i$ is the imaginary square root of $-1$.
+            
+            We can extract those components in some mathematical notation: 
+            $$z = a + bi \rightarrow re(z) = a$$
+            $$z = a + bi \rightarrow im(z) = b$$
+            
+            
+            We can add and multiply complex numbers (parentheses are just make doubly clear which bits are real and imaginary):
+            $$z_1 = a_1 + b_1i, z_2 = a_2 + b_2i \rightarrow z_1 + z_2 = (a_1 + a_2) + (b_1 + b_2)i$$
+            $$z_1 = a_1 + b_1i, z_2 = a_2 + b_2i \rightarrow z_1   z_2 = (a_1   a_2 - b_1   b_2) + (a_1   b_2 + b_1   a_2)i$$
+
+            This let's us square a number:
+            $$z = a + bi \rightarrow z^2 = (a^2 - b^2) + 2abi$$
+
+            We can also ask the magnitude of a complex number:
+            $$z = a + bi \rightarrow |z| = \sqrt{a^2 + b^2}$$
+            
+            That should give us everything we need to implement a complex number class.
+        
+        \paragraph{\texttt{Complex} class}
+            %
+            Let's make a file called \texttt{Complex.java} and put our class in it. Like \texttt{Colour}, we'll make it \emph{immutable}
+            for safety. Can you make the right fields and constructors\footnote{Uggh, why doesn't Java allow default arguments in
+            constructors? This is why I hate this language. One of the reasons, anyway.}?
+            
+            \begin{minted}[autogobble]{Java}
+                public class Complex {
+                    public final float re;
+                    public final float im;
+                    
+                    public Complex(float re, float im) {
+                        this.re = re;
+                        this.im = im;
+                    }
+                    public Complex(float re) {
+                        this(re, 0);
+                    }
+                }
+            \end{minted}
+            
+            What about the other operations? Magnitude is easy. 
+
+            But let's also have a method called \texttt{magSq} which will give us the magnitude squared. Why? Well, often you can avoid
+            doing the expensive square root operation. Consider the check we will need to do to find out if our magnitude is greater than
+            2. Instead we could check if the squared magnitude is greater than 4. No square root required.
+
+            \begin{minted}[autogobble]{Java}
+                public class Complex {
+                    ...
+                    public float magSq() {
+                        return re * re + im * im; 
+                    }
+                    public float mag() {
+                        return (float)Math.sqrt(magSq());
+                    }
+                    ...
+            \end{minted}
+            
+            Did you notice that we had to cast the \texttt{double} result from \texttt{Math.sqrt} into the smaller \texttt{float}?
+            
+            There are different ways we could do the add and multiply. We could have a \texttt{static} method which takes two complex
+            numbers, or we could have an instance member which takes the other number to use. Or we can have both and let the user decide
+            which to use. Neither are going to look as good as languages which allow operator overloading, but we can't help that in Java.
+            
+            \begin{minted}[autogobble]{Java}
+                public class Complex {
+                    ...
+                    public static Complex add(Complex a, Complex b) {
+                        return new Complex(a.re + b.re, a.im + b.im);
+                    }
+                    public Complex add(Complex that) {
+                        return add(this, that);
+                    }
+                    public static Complex mul(Complex a, Complex b) {
+                        return new Complex(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re);
+                    }
+                    public Complex mul(Complex that) {
+                        return mul(this, that);
+                    }
+                    ...
+            \end{minted}
+            
+            Oh, we can add some constants, too.
+            
+            \begin{minted}[autogobble]{Java}
+                public class Complex {
+                    ...
+                    public static final Complex ZERO = new Complex(0);
+                    public static final Complex ONE = new Complex(1);
+                    public static final Complex I = new Complex(0, 1);
+                    ...
+            \end{minted}
+                    
+        \paragraph{The Mandelbrot escape function}
+            %
+            Now we are ready to make our escape function. Can you do it? It should take a complex point and tell you how long it takes to
+            escape.
+            
+            We can make a \texttt{Mandelbrot} class. This should take our escape threshold and maximum iterations as parameters to
+            the constructor. Then we'll have an \texttt{escapeTime} function which does the actual calculation.
+            
+            \begin{minted}[autogobble]{Java}
+                public class Mandelbrot {
+                    public final float threshold;
+                    public final int maxIter;
+                    
+                    public Mandelbrot(float threshold, int maxIter) {
+                        this.threshold = threshold;
+                        this.maxIter = maxIter;
+                    }
+            
+                    public int escapeTime(Complex c) {
+                        Complex z = Complex.ZERO;
+                        int n = 0;
+                        float thresSq = threshold * threshold;
+                        while(n < maxIter && z.magSq() < thresSq) {
+                            z = z.mul(z).add(c); 
+                            n++;
+                        }
+                        return n;
+                    }
+                }
+            \end{minted}
+            
+        \paragraph{Colour mapping}
+            %
+            We need to map from the escape count to a colour. There are lots of ways we might do this, but we said we'd at least start by
+            doing it in grayscale.  Can you make a class to do that for you?
+            
+            Now, I'm going to make this class map floating point numbers from a range into colours. Really I'm just doing this because
+            maybe it might be useful later. 
+            
+            Hmm, maybe we should make an interface for colour mapping so that we could have different colour maps?
+            \begin{minted}[autogobble]{Java}
+                @FunctionalInterface
+                public interface ColourMap {
+                    Colour apply(float x);
+                }
+            \end{minted}
+            
+            Now, our gray colour map is:
+            
+            \begin{minted}[autogobble]{Java}
+                public class GrayColourMap implements ColourMap {
+                    public final float min;
+                    public final float max;
+                    
+                    public GrayColourMap(float min, float max) {
+                        this.min = min;
+                        this.max = max;
+                    }
+                    public Colour apply(float x) {
+                        float g = (x - min) / (max - min);
+                        return new Colour(g);
+                    }
+                }
+            \end{minted}
+            
+        \paragraph{Making the image}
+            %
+            We're almost there.  Let's make the \texttt{Image}. Can you see how to do this?
+            
+            We'll add to our \texttt{Mandelbrot} class:
+            
+            \begin{minted}[autogobble]{Java}
+                public class Mandelbrot {
+                    ...
+                    public void fill(Image img, float lft, float top, float rgt, float bot, ColourMap colours ) {
+                        img.fill(
+                            (x, y) -> colours.apply(escapeTime(new Complex(x, y))),
+                            lft, top, rgt, bot
+                        );
+                    }
+                }
+            \end{minted}
+            
+            Now we can put a \texttt{main} method to create the image, fill it, and write it to a file:
+            \begin{minted}[autogobble]{Java}
+                public class Mandelbrot {
+                    ...
+                    public static void main(String[] args) throws FileNotFoundException {
+                        Mandelbrot mandelbrot = new Mandelbrot(2, 32);
+                        ColourMap colours = new GrayColourMap(0,32);
+                        Image img = new Image(400, 400);
+                        mandelbrot.fill(
+                            img, 
+                            -2, 1.5f, 1, -1.5f, 
+                            colours
+                        );
+                        img.write("mandel.ppm");
+                    }
+                }
+            \end{minted}
+            
+            This should give us the image we were aiming for earlier.
+            
+            We could use a different colour map to get funkier colours. Here's one I did with some different colours, a higher max
+            iteration count and a finer resolution, oh and I used a continuous colouring. That last bit is in the list of other things
+            below that might interest you.
+            
+            \includegraphics[width=0.5\textwidth]{code/mandel}
+            
+            Change the parameters and have a zoom about.
+        
+        \newpage
+        \paragraph{Other things}
+            Here some ideas of things you might try (or move on to the next fractal).
+            \begin{itemize}
+                \item Build a GUI for it
+                \item It is really slow for big images. What solutions have people come up with? Try some?
+                \item Try histogram colouring
+                \item Try continuous colouring
+                \item Do Multibrots - $z_n = z_{n-1}^d + c$, for some $d$
+                \item Try contour or border mapping
+                \item How do you go beyond 32 or 64 bit precision?
+                \item Try showing Julia sets
+            \end{itemize}
+            
+            Here's a question for you. We've used \texttt{float}s so far. What are the advantages or disadvantages compared to
+            \texttt{double}s? Certainly, you can zoom in more if you use \texttt{double}s. Should you refactor all the \texttt{float}s into
+            \texttt{double}s? Yes, probably. Does it change the performance on your machine? What does it do to the memory consumption?
+            
+                
 \end{document}
