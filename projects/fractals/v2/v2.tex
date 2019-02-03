@@ -1021,6 +1021,7 @@
         
         Have a go at doing this yourself, then I'll walk you through my solution.
         
+        \newpage
         \paragraph{Complex numbers, a reminder}
             %
             It's pretty clear we're going to need complex numbers here. Unfortunately, Java doesn't provide them out of the box. There are
@@ -1154,7 +1155,8 @@
                     }
                 }
             \end{minted}
-            
+        
+        \newpage
         \paragraph{Colour mapping}
             %
             We need to map from the escape count to a colour. There are lots of ways we might do this, but we said we'd at least start by
@@ -1227,19 +1229,18 @@
             
             This should give us the image we were aiming for earlier.
             
+            \newpage
             We could use a different colour map to get funkier colours. Here's one I did with some different colours, a higher max
             iteration count and a finer resolution, oh and I used a continuous colouring. That last bit is in the list of other things
-            below that might interest you.
+            below that might interest you (but I solve it later for you anyway).
             
-            \includegraphics[width=0.5\textwidth]{code/mandel}
+            \includegraphics[width=0.8\textwidth]{code/mandel}
             
             Change the parameters and have a zoom about.
         
-        \newpage
         \paragraph{Other things}
             Here some ideas of things you might try (or move on to the next fractal).
             \begin{itemize}
-                \item Build a GUI for it
                 \item It is really slow for big images. What solutions have people come up with? Try some?
                 \item Try histogram colouring
                 \item Try continuous colouring
@@ -1252,7 +1253,541 @@
             Here's a question for you. We've used \texttt{float}s so far. What are the advantages or disadvantages compared to
             \texttt{double}s? Certainly, you can zoom in more if you use \texttt{double}s. Should you refactor all the \texttt{float}s into
             \texttt{double}s? Yes, probably. Does it change the performance on your machine? What does it do to the memory consumption?
+    
+    \newpage
+    \section{A JavaFX Gui}
+        Okay, I thought we could try something a bit different.  Shall we make a very simple GUI for our Mandelbrot pictures?  Yes?  Good.
+        
+        Right. Well, the first thing I should admit to you is that I haven't made a GUI for anything in Java for about 15 years. I have
+        just been looking at what's there and it has all changed, almost beyond all recognition. So, we're going to have work this out
+        together. And, when I show you some code for how to do things, realise that you can probably do better yourself. If you do write
+        some better code, send me an email and I can update this project.
+        
+        The next thing I'm going to tell you is that a bunch of the stuff we wrote before is going to be wasted because Java already did
+        them for you. Oh well, hopefully you learned something while doing it, though, right? For example, there is already a very good
+        \texttt{Color} class, and there is already a pretty good \texttt{Image} class. We're going to throw ours away and use Java's. We'll
+        make a new project (if you're using an IDE like Eclipse), or a new directory for our code (if you're doing it old school).
+        
+        Java still doesn't have a \texttt{Complex} class, so we can copy that over. But, while you're at it, make this version use only
+        \texttt{double}s, not floats.
+        
+        We're going to be using \emph{JavaFX}, which is Java's new graphics and GUI APIs. You will be able to find lots of tutorials and
+        things online as well as the raw API documentation. I'm only going to show you the bits we need for our simple user interface, but
+        you should definitely check out other resources.
+        
+        Here's a bit for you. From now on, we'll use JavaFX's \texttt{Color} class. You can find it at:
+        \url{https://docs.oracle.com/javase/9/docs/api/javafx/scene/paint/Color.html}. Have a look at, see the similarities and differences
+        between it and the simpler version we made. For the most part, it's similar enough that we don't need to discuss it too much.
+        
+        There's also an \texttt{Image} class, here: \url{https://docs.oracle.com/javase/9/docs/api/javafx/scene/image/Image.html}. It's a
+        bit different from ours. The basic class let's you load an image of various types from a file and scale it, etc. But, we're not
+        very interested in that. How do you read and write pixels?
+        
+        For reading you ask the \texttt{Image} for a \texttt{PixelReader} using the \texttt{getPixelReader()} method. A
+        \texttt{PixelReader} can then get you the \texttt{Color} for a pixel. The \texttt{PixelReader} interface is given here:
+        \url{https://docs.oracle.com/javase/9/docs/api/javafx/scene/image/PixelReader.html}.
+        
+        But there doesn't seem to be anyway to set the pixels in an \texttt{Image}, right? Right. There isn't. In fact, we need a different
+        class in the same package, \texttt{WritableImage} --
+        \url{https://docs.oracle.com/javase/9/docs/api/javafx/scene/image/WritableImage.html}. A \texttt{WritableImage} is actually a
+        subclass of \texttt{Image}, which means that everything you can do with an \texttt{Image}, you can do to a \texttt{WritableImage}.
+        A \texttt{WritableImage} has a method, \texttt{getPixelWriter()}, which gives you a \texttt{PixelWriter},
+        \url{https://docs.oracle.com/javase/9/docs/api/javafx/scene/image/PixelWriter.html}, that lets you actually set the pixels. Why is
+        it this complicated?
+
+        \paragraph{A first JavaFX image}
+            %
+            So, let's create an \texttt{Image} programmatically. We'll make an image that is 200 by 100 pixels and we'll set the pixels in
+            the way we did for the smooth image before.
+        
+            \begin{minted}[autogobble]{Java}
+                import javafx.scene.image.WritableImage;
+                import javafx.scene.image.PixelWriter;
+                import javafx.scene.paint.Color;
+
+                public class ImageTest {
+                    public static void main(String[] args) {
+                        WritableImage img = new WritableImage(200, 100);
+                        PixelWriter pw = img.getPixelWriter();
+        
+                        // Set the pixels
+                        for(int x = 0; x < img.getWidth(); ++x) {
+                            for(int y = 0; y < img.getHeight(); ++y) {
+                                Color c = Colour.color(x/img.getWidth(), 0, y/img.getHeight());
+                                img.setColor(x, y, c);
+                            }
+                        }
+                    }
+                }
+            \end{minted}
+        
+            BTW, note that there's something a bit weird going on with the width and height of \texttt{Image}s. You create a
+            \texttt{WritableImage} using integer width and height. But when you ask for the width and height afterwards using
+            \texttt{getWidth()} and \texttt{getHeight()}, the answers are \texttt{double}s!
+
+        \newpage
+        \paragraph{Writing a JavaFX image to disk} 
+            %
+            Great. But how on earth do we view it? Before we go on to making a GUI, we'll work out how to write an image to a file. This is
+            going to be a little bit painful because the \texttt{Image} doesn't support it natively. We're actually going to convert the
+            \texttt{Image} into an older API, and then use that to write out the image to disk.
+        
+            We'll make a class to hold this, and any other, image utilities.  Let's call it \texttt{ImageUtil}.
+        
+            What we do is use \texttt{SwingFXUtils}, \url{https://docs.oracle.com/javase/9/docs/api/javafx/embed/swing/SwingFXUtils.html},
+            to convert the image to a \texttt{BufferedImage},
+            \url{https://docs.oracle.com/javase/9/docs/api/java/awt/image/BufferedImage.html}, then use \texttt{ImageIO},
+            \url{https://docs.oracle.com/javase/9/docs/api/javax/imageio/ImageIO.html}, to write that image out. Uggh, what a palaver!
+            Hopefully, though, once we have the code for it once we won't ever have to worry about it again, we can just use our
+            \texttt{ImageUtil} class.
+        
+            \begin{minted}[autogobble]{Java}
+                import java.awt.image.BufferedImage;
+                import java.io.File;
+                import java.io.IOException;
+                import javafx.embed.swing.SwingFXUtils;
+                import javafx.scene.image.Image;
+                import javax.imageio.ImageIO;
+
+                public class ImageUtil {
+                    public static void write(Image img, File file) throws IOException {
+                        BufferedImage swingImg = SwingFXUtils.fromFXImage(img, null);
+                        String type;
+                        String fileName = file.getName();
+                        int lastDot = fileName.lastIndexOf(".");
+                        if(lastDot == -1) type = "png";
+                        else type = fileName.substring(lastDot + 1);
+                        ImageIO.write(swingImg, type, file);
+                    }
+                }
+            \end{minted}
+        
+            Note that here I get the type of the image from the extension of the file name, or uses ``png''. I haven't tried other types.
+            You might consider how to make this more robust.
+        
+            Now we should be able to update our \texttt{ImageTest} class to write out the image for us:
             
+            \begin{minted}[autogobble]{Java}
+                import java.io.*;
+                ...
+                public class ImageTest {
+                    ...
+                    public static void main(String[] args) throws IOException {
+                        ...
+                        ImageUtil.write(img, new File("smooth.png"));
+                    }
+                }
+            \end{minted}
+        
+        \paragraph{Filling an image}
+            %
+            Maybe we quite liked our previous ability to fill an image just from a function. Let's replicate that ability here.
+            
+            First, we'll make two versions of colour functions. One for mapping a 1-d input to a colour and one for mapping a 2-d input to
+            a colour.
+
+            Here's the one dimensional version:
+            \begin{minted}[autogobble]{Java}
+                import javafx.scene.paint.Color;
+                
+                @FunctionalInterface
+                public interface ColorMap1d {
+                    public Color apply(double x);
+                }
+            \end{minted}
+
+            Here's the two dimensional version:
+            \begin{minted}[autogobble]{Java}
+                import javafx.scene.paint.Color;
+                
+                @FunctionalInterface
+                public interface ColorMap2d {
+                    public Color apply(double x, double y);
+                }
+            \end{minted}
+            
+            Now, we can make a \texttt{fill} method in \texttt{ImageUtil}. Oh, and we can make use of the \texttt{Rectangle2D} class that
+            JavaFX gives us, \url{https://docs.oracle.com/javase/9/docs/api/javafx/geometry/Rectangle2D.html}.
+            
+            \begin{minted}[autogobble]{Java}
+                ...
+                import javafx.geometry.Rectangle2D;
+                
+                public class ImageUtil {
+                    public static void fill(WritableImage img, ColorMap2d f, Rectangle2D port) {
+                        PixelWriter pw = img.getPixelWriter();
+
+                        double iw = img.getWidth();
+                        double ih = img.getHeight();
+        
+                        double fminx = port.getMinX();
+                        double fminy = port.getMinY();
+                        double fw = port.getWidth();
+                        double fh = port.getHeight();
+        
+                        for(int ix = 0; ix < iw; ++ix) {            
+                            double fx = fminx + ix * fw / iw;
+            
+                            for(int iy = 0; iy < ih; ++iy) {
+                                double fy = fminy + iy * fh / ih;
+
+                                pw.setColor(ix, iy, f.apply(fx, fy));
+                            }
+                        }
+                    }
+                    ...
+                }
+            \end{minted}
+            
+            The code is basically the same as the code that we had before, just converted to use our new classes.
+
+            Let's add a convenience method to \texttt{ImageUtil} to create a new image directly from a \texttt{ColorMap2d}, rather than
+            needing us to supply it.
+            
+            \begin{minted}[autogobble]{Java}
+                ...
+                public class ImageUtil {
+                    public static WritableImage image(int w, int h, ColorMap2d f, Rectangle2D port) {
+                        WritableImage img = new WritableImage(w, h);
+                        ImageUtil.fill(img, f, port);
+                        return img;
+                    }
+                    ...
+                }
+            \end{minted}
+
+            And now the \texttt{main} method of our \texttt{ImageTest} class can be replaced with:
+            
+            \begin{minted}[autogobble]{Java}
+                import javafx.geometry.Rectangle2D;
+                ...
+                public class ImageTest {
+                    ...
+                    public static void main(String[] args) throws IOException {
+                        WritableImage img = ImageUtil.image(
+                            200, 100,
+                            (x, y) -> Color.color(x, 0, y),
+                            new Rectangle2D(0, 0, 1, 1)
+                        );
+                        ImageUtil.write(img, new File("smooth.png"));
+                    }
+                }
+            \end{minted}
+            
+            Great. We're pretty much back to where we started. Why didn't we just do this from the start?
+            
+        \paragraph{An image in a window}
+            %
+            We are at the point where we can put an image in a window.
+            
+            Let's make a class called \texttt{SoothApp}. Now, I'm about as new to JavaFX as you are, so my explanation of this might be a
+            bit hokey. 
+            
+            There is an \texttt{Application} class, \url{https://docs.oracle.com/javase/9/docs/api/javafx/application/Application.html},
+            which manages the lifecycle of the application. Specifically for us, this means we have a method we can fill in that the system
+            will call when the application starts. That method is called, wait for it ..., \texttt{start}. This takes a \texttt{Stage}
+            object, \url{https://docs.oracle.com/javase/9/docs/api/javafx/stage/Stage.html}, which you can think of as the window (it is
+            literally a subclass of \texttt{Window}, \url{https://docs.oracle.com/javase/9/docs/api/javafx/stage/Window.html}). The
+            \texttt{Stage} needs a \texttt{Scene}, \url{https://docs.oracle.com/javase/9/docs/api/javafx/scene/Scene.html}, which describes
+            what's in the window. The \texttt{Scene} in turn needs a set of things to show inside it. These things are given different
+            default layouts. Probably the simplest is \texttt{Pane},
+            \url{https://docs.oracle.com/javase/9/docs/api/javafx/scene/layout/Pane.html}. Into a \texttt{Pane} we can put a \texttt{Node}
+            that knows how to render our \texttt{Image}. This \texttt{Node} is called an \texttt{ImageView},
+            \url{https://docs.oracle.com/javase/9/docs/api/javafx/scene/image/ImageView.html}.
+            
+            Finally, you \texttt{launch} the \texttt{Application} from \texttt{main}.
+            
+            That all sounds a bit complicated.  It might not look so bad once you see the code:
+            
+            \begin{minted}[autogobble]{Java}            
+                import javafx.application.*;
+                import javafx.geometry.Rectangle2D;
+                import javafx.scene.*;
+                import javafx.scene.layout.*;
+                import javafx.scene.image.*;
+                import javafx.scene.paint.*;
+                import javafx.stage.*;
+
+                public class SmoothApp extends Application {
+                    public void start(Stage stage) {
+                        WritableImage img = ImageUtil.image(
+                            200, 100,
+                            (x, y) -> Color.color(x, 0, y),
+                            new Rectangle2D(0, 0, 1, 1)
+                        );
+        
+                        ImageView iv = new ImageView(img);
+                        Pane root = new Pane(iv);
+                        Scene scene = new Scene(root, img.getWidth(), img.getHeight());
+
+                        stage.setTitle("Smooth!");
+                        stage.setScene(scene);
+                        stage.setResizable​(false);
+                        stage.show();
+                    }
+
+                    public static void main(String[] args) {
+                        launch(args);
+                    }
+                }
+            \end{minted}
+        
+        \newpage
+        \paragraph{A Mandelbrot GUI}
+            %
+            Can you make a Mandelbrot show up in a GUI?
+            
+            Okay, I'll show you a way. We're going to make a bunch of classes, some of which are very close to things you've done before so
+            won't get discussed much.
+            
+            First up, let's have some better colours than just gray.  Here's a multi color one that cycles through a bunch of colours:
+            
+            \begin{minted}[autogobble]{Java}            
+                public class MultiColorMap1d implements ColorMap1d {
+                    public final double min;
+                    public final double max;
+                    public MultiColorMap1d (double min, double max) {
+                        this.min = min;
+                        this.max = max;
+                    }
+                    public Color apply(double x) {
+                        double s = Math.PI * (x - min) / (max - min);
+                        return Color.color(
+                            Math.abs(Math.sin(s*40)), 
+                            Math.abs(Math.sin(s*60)), 
+                            Math.abs(Math.cos(s*40))
+                        );
+                    }
+                }
+            \end{minted}
+        
+            \newpage
+            Then let's make our \texttt{Mandelbrot} class, much like before. But, I've made it all use \texttt{double}s and also I've added
+            a \texttt{smoothEscape} function (which you can find out more about here:
+            \url{https://en.wikipedia.org/wiki/Mandelbrot_set#Continuous_(smooth)_coloring}, I stole their implementation).
+            
+            \begin{minted}[autogobble]{Java}            
+                class Mandelbrot {
+                    public final double threshold;
+                    public final int maxIter;
+    
+                    public Mandelbrot(double threshold, int maxIter) {
+                        this.threshold = threshold;
+                        this.maxIter = maxIter;
+                    }
+
+                    public int escapeTime(Complex c) {
+                        Complex z = Complex.ZERO;
+                        int n = 0;
+                        double thresSq = threshold * threshold;
+                        while(n < maxIter && z.magSq() < thresSq) {
+                            z = z.mul(z).add(c); 
+                            n++;
+                        }
+                        return n;
+                    }
+                    public double escapeSmooth(Complex c) {
+                        Complex z = Complex.ZERO;
+                        int n = 0;
+                        double thresSq = threshold * threshold;
+                        while(n < maxIter && z.magSq() < thresSq) {
+                            z = z.mul(z).add(c); 
+                            n++;
+                        }
+                        double iter = n;
+                        double log2 = Math.log(2);
+                        if(iter < maxIter) {
+                            // sqrt of inner term removed using log simplification rules.
+                            double log_zn = Math.log(z.magSq( )) / 2;
+                            double nu = Math.log(log_zn / log2) / log2;
+                            // Rearranging the potential function.
+                            // Dividing log_zn by log(2) instead of log(N = 1<<8)
+                            // because we want the entire palette to range from the
+                            // center to radius 2, NOT our bailout radius.
+                            iter = iter + 1 - nu;
+                        }
+                        return iter;
+                    }
+                }
+            \end{minted}
+            
+            \newpage
+            Now I'm going to make a \texttt{ColorMap2d} from that by making a class that derives from \texttt{Mandelbrot}.
+        
+            This class is a \texttt{Mandelbrot} and also a \texttt{ColorMap2d}. That is declared on the line which says \texttt{extends}
+            and \texttt{implements}. You \texttt{extend} the \emph{single} super class, but you can \texttt{implement} as many
+            \emph{interfaces} as you like.
+            
+            We'll also see here that the constructor calls \texttt{super()}. Rather like before where we could call a different constructor
+            in our class using \texttt{this()}, we can call a constructor from the parent class using \texttt{super()}.
+        
+            \begin{minted}[autogobble]{Java}            
+                public class MandelbrotSmoothMap extends Mandelbrot implements ColorMap2d {
+                    public final ColorMap1d map;
+    
+                    public MandelbrotSmoothMap(double threshold, int maxIter, ColorMap1d map) {
+                        super(threshold, maxIter);
+                        this.map = map;
+                    }
+    
+                    public Color apply(double x, double y) {
+                        return map.apply(escapeSmooth(new Complex(x, y)));
+                    }
+                }
+            \end{minted}
+            
+            Finally, our \texttt{Application} class is quite straightforward.
+            
+            \begin{minted}[autogobble]{Java}            
+                public class MandelbrotApp extends Application {
+                    public void start(Stage stage) {
+                        int maxIter = 1000;
+                        WritableImage img = ImageUtil.image(
+                            500, 500,
+                            new MandelbrotSmoothMap(1 << 16, maxIter, new MultiColorMap1d(0, maxIter)),
+                            new Rectangle2D(-2, -1.5, 3, 3)
+                        );
+        
+                        ImageView iv = new ImageView(img);
+                        Pane root = new Pane(iv);
+                        Scene scene = new Scene(root, img.getWidth(), img.getHeight());
+
+                        stage.setTitle("Mandelbrot");
+                        stage.setScene(scene);
+                        stage.setResizable​(false);
+                        stage.show();
+                    }
+
+                    public static void main(String[] args) {
+                        launch(args);
+                    }
+                }
+            \end{minted}
+        
+            If all has gone well, you should get a window with your pretty picture inside it!
+            
+            Hopefully, you are now thinking of a million things you would like to explore with this.  Please, go do those things!
+        
+        \newpage
+        \paragraph{Zooming in}
+            %
+            I'll do one more thing with this Mandelbrot.  We'll zoom in when the user double clicks.
+            
+            First, let's see how we can trap mouse clicks on the image. JavaFX makes this super easy. We add an \texttt{EventHandler} for
+            \texttt{MouseEvent}s to the \texttt{onMouseClicked} event handler list. Umm, that's much easier than it sounds:
+                        
+            \begin{minted}[autogobble]{Java}
+                ... 
+                public class MandelbrotApp extends Application {
+                    public void start(Stage stage) {
+                        ...
+                        ImageView iv = new ImageView(img);
+                        iv.setOnMouseClicked(e -> System.out.println("Clicked at x=" + e.getX() + " y = " + e.getY());
+                        ...
+                    }
+                    ...
+                }
+            \end{minted}
+            
+            Hmm, maybe you can work out how zoom in now? If you write to the image inside the event handler, it will update the image. Give
+            it a try!
+            
+            Okay, I'll do it, too. I'll make a \texttt{zoom} function to work out how the \texttt{port} should change. It's fairly simple.
+            It takes the current port, the dimensions of the image, and the click point. It returns the new port.
+            
+                        
+            \begin{minted}[autogobble]{Java}
+                ... 
+                public class MandelbrotApp extends Application {
+                    ...
+                    private Rectangle2D zoom(Rectangle2D port, double iw, double ih, double ex, double ey) {
+                        double w = port.getWidth();
+                        double h = port.getHeight();
+        
+                        // Where was clicked in the image space
+                        double x = port.getMinX() + w * ex / iw;
+                        double y = port.getMinY() + h * ey / ih;
+        
+                        // Make the port smaller
+                        w *= 0.5;
+                        h *= 0.5;
+
+                        // Center around the clicked point
+                        return new Rectangle2D(x - w / 2, y - h / 2, w, h);
+                    }
+                    ...
+                }
+            \end{minted}
+            
+            Not too bad. Why did I say it was private? Well, just because I don't really want any other classes messing with it.
+            
+            Now we just need to make the click handler zoom and fill, right?
+            
+            \begin{minted}[autogobble]{Java}
+                iv.setOnMouseClicked(
+                    e -> {
+                        port = zoom(port, img.getWidth(), img.getHeight(), e.getX(), e.getY());
+                        ImageUtil.fill(img, map, port);
+                    }
+                );
+            \end{minted}
+
+            \newpage
+            Umm, ooops. Something badly wrong happened there. Can you work out what?
+            
+            It isn't the braces or multiple statements in the lambda function. Those are fine.
+            
+            To understand, we have to remember what happens to the lambda function. It is really just giving the implementation of the
+            \texttt{handle} method in a \texttt{EventHandler} class
+            (\url{https://docs.oracle.com/javase/9/docs/api/javafx/event/EventHandler.html}) that is implicitly created. The lambda is
+            syntactic sugar. It as if we wrote something like:
+            
+            \begin{minted}[autogobble]{Java}
+                class ZoomClickHandler implements EventHandler<MouseEvent> {
+                    Rectangle2D port;
+                    WritableImage img;
+                    ColorMap2d map;
+                    
+                    public ZoomClickHandler(Rectangle2D port, WritableImage img, ColorMap2d map) {
+                        this.port = port;
+                        this.img = img;
+                        this.map = map;
+                    }
+                    public void	handle​(MouseEvent e) {
+                        port = zoom(port, img.getWidth(), img.getHeight(), e.getX(), e.getY());
+                        ImageUtil.fill(img, map, port);
+                    }
+                }
+            \end{minted}
+            
+            And then added the event handler:
+
+            \begin{minted}[autogobble]{Java}
+                iv.setOnMouseClicked(new ZoomClickHandler(port, img, map));
+            \end{minted}
+            
+            But look what happens. The local variables have been copied. When we assign to \texttt{port}, it affects the copy, not the
+            original. Java assumes this is because we messed up (though actually it would be fine here, Java just doesn't know that). So it
+            insists that the only local variables from the parent function you are allowed to access must be marked final so you know they
+            can't change. Yes, Java thinks we are idiots.
+            
+            But we can't mark \texttt{port} as final because we need to change it. Uggh.
+            
+            As a dirty hack, we could just throw a bunch of stuff up a level into the object's fields so they aren't local anymore.
+            
+            \begin{minted}[autogobble]{Java}
+                public class MandelbrotApp extends Application {
+                    private int maxIter = 1000;
+                    private ColorMap2d map = new MandelbrotSmoothMap(1 << 16, maxIter, new MultiColorMap1d(0, maxIter));
+                    private Rectangle2D port = new Rectangle2D(-2, -1.5, 3, 3);
+                    private WritableImage img = ImageUtil.image(500, 500, map, port);
+            \end{minted}
+            
+            Or you could make a proper zoom click handler. Or do it properly some other way.  Up to you.
+            
+            But now you should have zoomable Mandelbrot!  What else can you add to it?
+
+    \newpage
     \section{Brownian Trees}
         Coming soon...
         
