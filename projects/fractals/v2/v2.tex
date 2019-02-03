@@ -1522,7 +1522,7 @@
 
                         stage.setTitle("Smooth!");
                         stage.setScene(scene);
-                        stage.setResizable​(false);
+                        stage.setResizable(false);
                         stage.show();
                     }
 
@@ -1787,8 +1787,498 @@
             
             But now you should have zoomable Mandelbrot!  What else can you add to it?
 
+        \paragraph{Other things}
+            %
+            So far we have built about the worst GUI in the history of GUIs.  Here are a few of the millions of things you might do next:
+            
+            \begin{itemize}
+                \item Make it so you can pan, zoom out, reset, select a rectangle, etc.
+                \item Make the window resizable
+                \item Have a menu bar to allow other options, which might include:
+                \begin{itemize}
+                    \item Saving the current view to disk
+                    \item Changing the current fractal (did you try Julia sets?)
+                    \item Changing the colour map
+                \end{itemize}
+                \item Make the zooming smooth -- overlay the old image with the new one, scale them and change transparency so they animate 
+                well.
+                \item Have a thumbnail of the whole fractal showing where you are
+                \item Save and restore the current state
+                \item Do the same thing but as an Android app
+                \item Do the same thing using HTML and JavaScript
+            \end{itemize}
+
     \newpage
     \section{Brownian Trees}
-        Coming soon...
         
+        Brownian trees model a bunch of particles jittering around at random and sticking to anything they hit. We're going to do a
+        particularly simple version and then you can maybe try different types yourself.
+        
+        Choose a random x value and “drop a flake of snow” from the top of the image, straight down from the x axis, until there is a white
+        pixel just below it, or one to left and below, or to the right and below, or until it hits the bottom. When it stops, leave it
+        there in white. Repeat.
+        
+        Rather than dropping the snow a square at time, you can make it more efficient by remembering the highest value for each x
+        coordinate and using that directly to work out where a bit of snow should stop.
+        
+        Finish when you can’t drop snow more than one square.
+        
+        The kind of thing we expect to make should look like this (note these trees are growing down and are coloured according to their
+        age):
+        
+        \includegraphics[width=0.9\textwidth]{code/gui/tree.png}
+
+        Have a go at doing this before you look at my solution.
+        
+        \newpage
+        \paragraph{A simple class for Brownian trees}
+            %
+            Have you noticed how for the most part I have separated out bits of code to handle the bits that are important to them? For
+            instance, the \texttt{Mandelbrot} class doesn't have anything to do with graphics, it just handles the escape calculations.
+            This kind of separation is a good idea. It keeps things simple.
+            
+            Let's do the same for our Brownian trees. We'll make a class that does the important bits of Brownian trees but doesn't know
+            anything about graphics, windows etc.
+            
+            We'll call the class \texttt{BrownianTree}. 
+            
+            The main operation it's going to have is to drop a new particle. When we do this, we want to know where it lands. This will
+            require us to return both the \texttt{x} and the \texttt{y} coordinates. There are many different ways we could do this. You
+            could return a two element array of integers (yuck!). You could see if there are some existing classes in the Java library that
+            will do the job.
+            
+            There are some. 
+            
+            You could use a \texttt{javafx.util.Pair}, \url{https://docs.oracle.com/javase/9/docs/api/javafx/util/Pair.html}. This lets us
+            have any types in the pairs. But it wraps the integers as objects which is a bit heavy weight, and it doesn't look like a
+            Point, which is kind of what we want to return.
+            
+            You could make a new class to hold a pair of integers. But let's not bother for the moment.
+            
+            You could use a \texttt{javafx.geometry.Point2D}, \url{https://docs.oracle.com/javase/9/docs/api/javafx/geometry/Point2D.html}.
+            This returns \texttt{double}s not \texttt{int}s. That's not ideal, it would be great to already have an integer point class,
+            but this will do.            
+            
+            So, those bits are going to look like this:
+
+            \begin{minted}[autogobble]{Java}
+                import javafx.geometry.Point2D;
+
+                public class BrownianTree {
+                    public Point2D drop() {
+                        // Something here
+                    }
+                }
+            \end{minted}
+
+            How do we work out which point when we drop? Well, we are going to need a random number generator and the current heights in
+            all the columns of the image. Java has a \texttt{java.util.Random} for the generator, and we can use an array of \texttt{int}s
+            for the heights. Let's make fields for them and constructors, too.
+
+            \begin{minted}[autogobble]{Java}
+                import java.util.Random;
+                ...
+
+                public class BrownianTree {
+                    public final Random random;
+                    public final int width;
+                    private final int[] heights;
+    
+                    public BrownianTree(int width, Random random) {
+                        this.random = random;
+                        this.width = width;
+                        this.heights = new int[width];
+                    }
+                    public BrownianTree(int width) {
+                        this(width, new Random());
+                    }
+                    ...
+                }
+            \end{minted}
+            
+            Now, once we've chosen a column to drop a particle into, we have to look at the current height of the column and the two
+            columns adjacent. We're going to use the \texttt{max} of those three columns' heights. This sounds nice and easy. We could just
+            put \texttt{y} as:
+            
+            \begin{minted}[autogobble]{Java}
+                y = max(heights[x-1], heights[x], heights[x+1]);
+            \end{minted}
+            
+            But, no. There are some problems with this. First, Java only has a binary \texttt{max}\footnote{Actually, you can \texttt{max} a stream, but we'll ignore that at the moment.}, so we have to have some nested \texttt{max}es.
+
+            \begin{minted}[autogobble]{Java}
+                y = max(heights[x-1], max(heights[x], heights[x+1]));
+            \end{minted}
+            
+            \newpage
+            More problematically, we are running the risk of disappearing off the end of the array. This will cause an
+            \texttt{ArrayIndexOutOfBoundsException}. We don't want that.
+            
+            We could have special code the handle the two cases when \texttt{x = 0} and \texttt{x = width - 1}.
+            \begin{minted}[autogobble]{Java}
+                if(x == 0)
+                    y = max(heights[x], heights[x+1]);
+                else if(x == width - 1)
+                    y = max(heights[x-1], max(heights[x]);
+                else 
+                    y = max(heights[x-1], max(heights[x], heights[x+1]));
+            \end{minted}
+
+            But that is \emph{ugly}.
+            
+            We could restrict our points so that x can only be chosen from the range $[1, width-2]$. Then the two end columns act as
+            \emph{sentinels}. You can make the internal columns a two more than the ones asked for and do the appropriate conversions.
+            Sentinels are a common technique to avoid special casing. It is worth thinking about.
+            
+            Finally, we could wrap the column. So if you ask for column \texttt{-1}, we give you column \texttt{width-1}. This is what I'll
+            do here.
+            
+            Now, you might think you can just use the modulo operator \texttt{\%} for this. But there's an annoying problem. When you mod a
+            negative number you get a negative number! But there's a quick fix. Add the \texttt{width} to \texttt{x} first before taking
+            the mod with \texttt{width}.  We'll put this in a \texttt{private} method called \texttt{h}.
+            
+            Then we just need to work out the new height, remember that we've changed it and return the point where the particle lands.
+            
+            \begin{minted}[autogobble]{Java}
+                import static java.lang.Math.max;
+                ...
+                public class BrownianTree {
+                    ...
+                    private int h(int x) {
+                        return heights[(x + width) % width];
+                    }
+                    public Point2D drop() {
+                        int x = random.nextInt(width);
+                        int y = max(h(x - 1), max(h(x), h(x + 1)));
+                        heights[x] = y + 1;
+                        return new Point2D(x, y);
+                    }
+                }
+            \end{minted}
+
+            I'm going to add another thing. It will be useful later to know the range that the heights can fall into. I'm going to ask
+            Java to compute these for me. A \texttt{Stream} can do this and we can make a \texttt{Steam} for an array using the
+            \texttt{Arrays} class. Let's not worry about it too much. I'll show you and you can check out the Java docs to see what these
+            classes offer.
+            
+            \begin{minted}[autogobble]{Java}
+                import java.util.Arrays;
+                import java.util.IntSummaryStatistics;
+
+                public class BrownianTree {
+                    ...
+                    public IntSummaryStatistics getHeightStats() {
+                        return Arrays.stream(heights).summaryStatistics();
+                    }
+                }
+            \end{minted}
+            
+            \newpage
+            Now, actually, I added the thing above just to introduce you to a different library. Probably, we will mostly be interested in
+            finding out the maximum height. We could use the summary statistics, or we could use the
+            \texttt{Arrays.stream(heights).max().getAsInt()}. But we can make this faster by incrementing a maximum height field every time
+            it increases.
+            
+            \begin{minted}[autogobble]{Java}
+                ...
+                public class BrownianTree {
+                    private int maxHeight;
+                    ...
+                    public Point2D drop() {
+                        ...
+                        heights[x] = y + 1;
+                        if(heights[x] > maxHeight) maxHeight = heights[x];
+                        ...
+                    }
+                    public int getMaxHeight() {
+                        return maxHeight;
+                    }
+                    ...
+                }
+            \end{minted}
+            
+        \paragraph{Filling an \texttt{Image} with a \texttt{BrownianTree}}
+            %
+            Filling an image using a \texttt{BrownianTree} should now be pretty easy for you. Give it a go before seeing what I did. You'll
+            probably do it better!
+            
+            We're going to make a class that starts looking very much like \texttt{SmoothApp} and then add things to it.  Here it is:
+            
+            \begin{minted}[autogobble]{Java}
+                import javafx.application.*;
+                import javafx.geometry.*;
+                import javafx.scene.*;
+                import javafx.scene.layout.*;
+                import javafx.scene.image.*;
+                import javafx.scene.paint.*;
+                import javafx.stage.*;
+
+                public class BrownianTreeApp extends Application {
+                    public void start(Stage stage) {
+                        WritableImage img = new WritableImage(1000, 1000);
+                        ImageView iv = new ImageView(img);
+                        Pane root = new Pane(iv);
+                        Scene scene = new Scene(root, img.getWidth(), img.getHeight());
+
+                        stage.setTitle("Brownian Tree!");
+                        stage.setScene(scene);
+                        stage.setResizable​(false);
+                        stage.show();
+
+                        // Here's the tree bit.  Pretty simple really.
+                        BrownianTree tree = new BrownianTree((int)img.getWidth());
+                        PixelWriter pw = img.getPixelWriter();
+                        while(tree.getMaxHeight() < img.getHeight()) {
+                            Point2D p = tree.drop();
+                            pw.setColor((int)p.getX(), (int)p.getY(), Color.BLACK);
+                        }
+                    }
+
+                    public static void main(String[] args) {
+                        launch(args);
+                    }
+                }
+            \end{minted}
+        
+        \newpage
+        \paragraph{Animating the tree}
+            %
+            Fine. But boring.  Did we learn anything new? Not so much.
+            
+            Hey, what if we animate the drawing of the tree so we can see it being built? Let's make a class called
+            \texttt{BrownianTreeAnimator}. We won't make it \texttt{public}, we'll put it in the same file as \texttt{BrownianTreeApp}.
+            This is just because I want a new class for clarity, but it doesn't deserve to be a top level class\footnote{Actually, I'm
+            really just doing this to show you it can be done.}.
+            
+            Now the \texttt{BrownianTreeAnimator} will derive from \texttt{AnimationTimer},
+            \url{https://docs.oracle.com/javase/9/docs/api/javafx/animation/AnimationTimer.html}. It has one method to fill in,
+            \texttt{handle}. This method is called repeated by the animation loop. Each time it is called it tells us what the time is in
+            nanoseconds.  We can use this method to \texttt{drop} a new particle into the image.
+            
+            The \texttt{BrownianTreeAnimator} will need to know the image we want to draw in, so we'll pass that into the constructor. It
+            also might as well make the \texttt{BrownianTree}, and we could pull out the \texttt{PixelWriter} from the image to start with.
+            
+            Also, we're going to replace the code in \texttt{BrownianTreeApp.start()} with a call to \texttt{start} up our new animator.
+            
+            Here's what it looks like:
+            
+            \begin{minted}[autogobble]{Java}
+                ...            
+                import javafx.animation.*;
+                ...
+                public class BrownianTreeApp extends Application {
+                    public void start(Stage stage) {
+                        ...
+                        new BrownianTreeAnimator(img).start();
+                    }
+                    ...
+                }
+                
+                class BrownianTreeAnimator extends AnimationTimer {
+                    private WritableImage img;
+                    private BrownianTree tree;
+                    private PixelWriter pw;
+
+                    public BrownianTreeAnimator(WritableImage img) {
+                        this.img = img;
+                        this.pw = pw = img.getPixelWriter();
+                        this.tree = new BrownianTree((int)img.getWidth());
+                    }
+                    public void handle(long now) {
+                        if(tree.getMaxHeight() < img.getHeight()) {
+                            Point2D p = tree.drop();
+                            pw.setColor((int)p.getX(), (int)p.getY(), Color.BLACK);
+                        } else {
+                            stop();
+                        }
+                    }
+                }
+            \end{minted}
+
+        \newpage
+        \paragraph{Speeding up the tree animation}
+            %
+            Umm, did you die of old age yet?  What happened? Our animation is super, super slow.
+            
+            There is a lot of overhead to the animation. Each frame just adds one particle and we have a lot of particles to add. Maybe we
+            should add more than one each time? How about a whole width's worth?  Can you do it?
+            
+            We need a relatively minor change to the \texttt{handle} method.  It should do the old body in a loop of \emph{width} times.
+            
+            \begin{minted}[autogobble]{Java}
+                ...            
+                class BrownianTreeAnimator extends AnimationTimer {
+                    ...
+                    public void handle(long now) {
+                        for(int i = 0; i < img.getWidth(); ++i) {
+                            if(tree.getMaxHeight() < img.getHeight()) {
+                                Point2D p = tree.drop();
+                                pw.setColor((int)p.getX(), (int)p.getY(), Color.BLACK);
+                            } else {
+                                stop();
+                            }
+                        }
+                    }
+                }
+            \end{minted}
+            
+            That's a little more fun, right?
+        
+        \newpage
+        \paragraph{Continuously scrolling the tree}
+            %
+            But, we stop at the end of the image which is a bit tedious. Why can't we just go on forever, scrolling the image as it needs
+            more space? Well, we can.
+            
+            If I tell you that a \texttt{PixelWriter} can set multiple pixels at once from a \texttt{PixelReader} - even if that
+            \texttt{PixelReader} comes from the same image, can you see then how to do it? Why not have a go before looking at what I did?
+            
+            
+            Okay, so the idea is that we are going to drop a whole load of particles and see how much we need to scroll by. Then we scroll.
+            Then we draw in those particles. We need to do it in that order, since if draw first they'll be outside the image.
+            
+            To work out how much to scroll by, and how to translate the height of a dropped particle to a y coordinate on the ever
+            scrolling image, we maintain a \texttt{heightOffset} field that we update every time we scroll a bit.
+            
+            \begin{minted}[autogobble]{Java}
+                ...            
+                class BrownianTreeAnimator extends AnimationTimer {
+                    ...
+                    // How much have we scrolled by?
+                    private int heightOffset;
+                    ...
+                    public void handle(long now) {
+                        int w = (int)img.getWidth();
+                        int h = (int)img.getHeight();
+        
+                        // Drop the particles first and remember them to draw later.
+                        Point2D[] ps = new Point2D[w];
+                        for(int i = 0; i < w; ++i) ps[i] = tree.drop();
+                        int maxHeight = tree.getMaxHeight();
+        
+                        // Do we need to scroll?
+                        int heightDiff = maxHeight - h - heightOffset;
+                        if(heightDiff > 0) {
+                            // Scroll the image by heightDiff pixels.
+                            pw.setPixels(0, 0, w, h - heightDiff, img.getPixelReader(), 0, heightDiff);
+                            // Remember we have scrolled by a little more.
+                            heightOffset += heightDiff; 
+                        }
+
+                        // Paint the particles, remembering to account for the scroll amount.
+                        for(Point2D p : ps) {
+                            int y = (int)p.getY() - heightOffset;
+                            // It is possible, but really, really unlikely, 
+                            // that lots of particles could all land on the same column.
+                            // Theoretically, we could then have particles appearing far below 
+                            // the `tip' of the tree.  Potentially, these could be so far back
+                            // that they are off the image.  It is really, really unlikely, but
+                            // we should probably check for it.  This `if' only paints the particle
+                            // if it is valid to do so.
+                            if(y > 0) {
+                                pw.setColor((int)p.getX(), y, Color.BLACK);
+                            }
+                        }
+                    }
+                }
+            \end{minted}
+
+            Hey, that kind of works.  But there's something funky going on with black smudges appearing up the image.  What's that about?
+            
+            \newpage
+            Well, we aren't clearing the rectangle we scrolled away from.  We need to blank it with the background color first (white?).
+            Let's bring scrolling out into its own method to make it clearer.
+
+            \begin{minted}[autogobble]{Java}
+                ...            
+                class BrownianTreeAnimator extends AnimationTimer {
+                    ...
+                    public void handle(long now) {
+                        ...
+                        if(heightDiff > 0) scroll(heightDiff);
+                        ...
+                    }
+                    private void scroll(int diff) {
+                        int w = (int)img.getWidth();
+                        int h = (int)img.getHeight();
+                    
+                        pw.setPixels(0, 0, w, h - diff, img.getPixelReader(), 0, diff);
+                        heightOffset += diff; 
+                        
+                        // Blank the old pixels.
+                        for(int x = 0; x < w; x++) {
+                            for(int y = h - diff; y < h; y++) {
+                                pw.setColor(x, y, Color.WHITE);
+                            }
+                        }
+                    }
+                    ...
+            \end{minted}
+        
+        \newpage
+        \paragraph{Age based colours}
+            %
+            Finally, let's make the colours change based on the time the particle was placed. We can do this by having an \texttt{age}
+            field in \texttt{BrownianTreeAnimator} which gets updated every time we add a particle. We can then use one of our
+            \texttt{ColorMap1d}s to choose colours for the particles.  Can you do it?
+            
+            I'll show how I did it.  It should be fairly self explanatory by now.
+            
+            \begin{minted}[autogobble]{Java}
+                ...
+                public class BrownianTreeApp extends Application {
+                    public void start(Stage stage) {
+                        ...
+                        new BrownianTreeAnimator(img, new AgeColorMap1d()).start();
+                    }
+                    ...
+                }
+                
+                class BrownianTreeAnimator extends AnimationTimer {
+                    ...
+                    private ColorMap1d ageMap;
+                    private int age;
+                    
+                    public BrownianTreeAnimator(WritableImage img, ColorMap1d ageMap) {
+                        ...
+                        this.ageMap = ageMap;
+                    }
+                    
+                    public void handle(long now) {
+                        ...
+                        if(y > 0) {
+                            pw.setColor((int)p.getX(), y, ageMap.apply(age));
+                        }
+                        age++;
+                        ...
+                    }
+                    ...
+                }
+                
+                class AgeColorMap1d implements ColorMap1d {
+                    public Color apply(double x) {
+                        return Color.color(
+                            (1+Math.sin(x*0.0001))/2, 
+                            (1+Math.sin(x*0.0002))/2, 
+                            (1+Math.cos(x*0.000003))/2
+                        );
+                    }
+                }
+            \end{minted}
+        
+        \paragraph{Other things}
+            %
+            \begin{itemize}
+                \item This isn't the standard way of doing Brownian trees. This is more like `Brownian snow'. The normal method has some
+                fixed seed points, then particles randomly jitter around until they stick to something (initially to a seed point, then to
+                other stuck points). Try doing it that way. What happens if the chance of sticking is not 100\%? There are lots of
+                variations.
+                \item Make the GUI less terrible.
+                \item Try doing the same thing on Android.
+                \item Try doing it in JavaScript and HTML.                
+            \end{itemize}
+            
+    \newpage
+    \section{Fractal Landscapes}
+        Coming soon...
 \end{document}
