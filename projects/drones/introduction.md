@@ -88,12 +88,12 @@ Read through the manual to see what else you can make the drone do ;)
 
 That's all for the basic introduction. Check out the other worksheets (coming soon) for more advanced things you can do.
 
-[drone on ground]: https://raw.githubusercontent.com/vsee/uoe_programmingclub/master/projects/drones/drone%20on%20ground.jpg "One of those super cool drones!"
-[drone flying]: https://raw.githubusercontent.com/vsee/uoe_programmingclub/master/projects/drones/fly.mp4 "Yes, they really do fly"
-[drone flip]: https://raw.githubusercontent.com/vsee/uoe_programmingclub/master/projects/drones/flip.mp4 "Gets that wow reaction every time"
-[drone land]: https://raw.githubusercontent.com/vsee/uoe_programmingclub/master/projects/drones/land.mp4 "Fingers crossed you don't have to wait for the battery to run out"
+[drone on ground]: https://media.githubusercontent.com/media/Vidminas/pgclub-drone-media/master/jpg/drone%20on%20ground.jpg "One of those super cool drones!"
+[drone flying]: https://media.githubusercontent.com/media/Vidminas/pgclub-drone-media/master/gif/takeoff.gif "Yes, they really do fly"
+[drone flip]: https://media.githubusercontent.com/media/Vidminas/pgclub-drone-media/master/gif/flip.gif "Gets that wow reaction every time"
+[drone land]: https://media.githubusercontent.com/media/Vidminas/pgclub-drone-media/master/gif/landing.gif "Fingers crossed you don't have to wait for the battery to run out"
 [Python page]: https://www.python.org/downloads/
 [Ryze page]: https://www.ryzerobotics.com/tello/downloads
 [Tello SDK manual]: https://terra-1-g.djicdn.com/2d4dce68897a46b19fc717f3576b7c6a/Tello%20%E7%BC%96%E7%A8%8B%E7%9B%B8%E5%85%B3/For%20Tello/Tello%20SDK%20Documentation%20EN_1.3_1122.pdf
 [Tello SDK template]: https://terra-1-g.djicdn.com/2d4dce68897a46b19fc717f3576b7c6a/Tello%20%E7%BC%96%E7%A8%8B%E7%9B%B8%E5%85%B3/Both/Tello3(1).py
-[drone in air]: https://raw.githubusercontent.com/vsee/uoe_programmingclub/master/projects/drones/drone%20in%20air.jpg "You've done it all! Congratulations"
+[drone in air]: https://media.githubusercontent.com/media/Vidminas/pgclub-drone-media/master/jpg/drone%20in%20air.jpg "You've done it all! Congratulations"
