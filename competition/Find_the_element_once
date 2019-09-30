@@ -1,0 +1,7 @@
+/*
+Given an array of integers. All numbers occur twice except one number which occurs once. Find the number in O(n) time & constant 
+extra space.
+
+EX: Input: arr[] = {9, 3, 7, 4, 7, 3, 4} 
+    Output: 9
+*/
